@@ -35,11 +35,10 @@ header .privacy{margin-left:auto;font-size:13px}
 @media (max-width:860px){ header .privacy{margin-left:0} }
 .btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 textarea.dropping{outline:2px dashed var(--accent);outline-offset:-1px}
-.guide{max-width:860px;margin:8px auto 0;padding:0 16px 8px}
-.guide h2{font-size:20px;letter-spacing:0;text-transform:none;color:var(--ink);margin:28px 0 10px}
-.guide ol{padding-left:22px;margin:0}
+.guide ol{padding-left:20px;margin:0;font-size:13px}
 .guide li{margin:5px 0}
-.guide details{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0}
+.guide details{border-top:1px solid var(--line);padding:9px 0;font-size:13px}
+.guide details:last-child{padding-bottom:0}
 .guide summary{font-weight:600;cursor:pointer}
 .guide details p{margin:8px 0 2px;color:var(--muted)}
 .guide table{border-collapse:collapse;margin-top:8px;font-size:13px}
@@ -48,6 +47,10 @@ textarea.dropping{outline:2px dashed var(--accent);outline-offset:-1px}
 .site-foot a{color:var(--accent)}
 main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;padding:16px;align-items:start}
 @media (max-width:860px){main{grid-template-columns:1fr}}
+/* Desktop: the settings column is its own pane that scrolls on its own, so the preview never scrolls away. */
+@media (min-width:861px){
+  .sidebar{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;overscroll-behavior:contain;padding-right:6px;scrollbar-width:thin}
+}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 .panel + .panel{margin-top:12px}
 h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
@@ -118,7 +121,7 @@ button:disabled{opacity:.45;cursor:default}
 </header>
 
 <main>
-  <div>
+  <div class="sidebar">
     <section class="panel">
       <h2>Envelope</h2>
       <select id="size" data-key="size" aria-label="Envelope size"></select>
@@ -234,10 +237,8 @@ button:disabled{opacity:.45;cursor:default}
         <li>Then feed <b>one</b> real envelope with <b>Print this one</b>. If the text lands off, fix it under <b>Printer adjustments</b>. Those settings are saved.</li>
       </ul>
     </section>
-  </div>
-</main>
 
-<section class="guide">
+<section class="panel guide">
   <h2>How to print addresses on envelopes</h2>
   <ol>
     <li><b>Add your addresses.</b> Type or paste them with a blank line between each one, paste cells from a spreadsheet, or import a CSV file.</li>
@@ -246,7 +247,9 @@ button:disabled{opacity:.45;cursor:default}
     <li><b>Check it on plain paper.</b> <i>Test on plain paper</i> prints an outline you can hold an envelope against.</li>
     <li><b>Print one real envelope, then the batch.</b> If it lands a little off, fix it once under <i>Printer adjustments</i> and it's remembered.</li>
   </ol>
+</section>
 
+<section class="panel guide">
   <h2>Questions</h2>
   <details>
     <summary>How do I print envelopes from an Excel or Google Sheets list?</summary>
@@ -283,6 +286,8 @@ button:disabled{opacity:.45;cursor:default}
     <p>Yes. Choose an image in the Logo panel or drop one onto the envelope preview, then drag it into place and pull its corner to resize. Tick <i>Print in black &amp; white</i> for a mono printer.</p>
   </details>
 </section>
+  </div>
+</main>
 
 <footer class="site-foot">
   <span>Made by <a href="https://squirrelscripts.github.io/">SquirrelScripts</a> 🐿️</span>
