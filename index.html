@@ -53,9 +53,22 @@ main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;padding:16p
 @media screen and (min-width:861px){
   body{height:100vh;display:flex;flex-direction:column;overflow:hidden}
   header{flex:none}
-  main{flex:1;min-height:0;align-items:stretch;grid-template-rows:minmax(0,1fr)}
-  .sidebar,.content{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:6px}
+  main{flex:1;min-height:0;align-items:stretch;grid-template-rows:minmax(0,1fr);position:relative}
+  .sidebar,.content{
+    min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:12px;
+    scrollbar-width:none;   /* native bar hidden; the overlay thumb below replaces it */
+    --ft:0px; --fb:0px;     /* edge fades, set from JS when there's more to scroll that way */
+    -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 var(--ft),#000 calc(100% - var(--fb)),transparent 100%);
+            mask-image:linear-gradient(to bottom,transparent 0,#000 var(--ft),#000 calc(100% - var(--fb)),transparent 100%);
+  }
+  .sidebar::-webkit-scrollbar,.content::-webkit-scrollbar{display:none}
+  main > .oscroll{display:block}   /* more specific than the base rule below, which hides it off-desktop */
 }
+/* Overlay scrollbar: a thin thumb that shows while scrolling, then fades. */
+.oscroll{display:none;position:absolute;z-index:5;width:6px;border-radius:3px;background:var(--muted);opacity:0;pointer-events:none;transition:opacity .5s ease .1s,width .15s ease}
+.oscroll.on{opacity:.5;pointer-events:auto;transition:opacity .15s ease,width .15s ease}
+.oscroll:hover,.oscroll.drag{opacity:.8;width:8px}
+@media (prefers-reduced-motion: reduce){ .oscroll{transition:none} }
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 .panel + .panel{margin-top:12px}
 h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
@@ -863,6 +876,63 @@ $('#reset').onclick = () => { delete state.positions[posKey()]; save(); render()
 $('#printAll').onclick = () => doPrint('all');
 $('#printOne').onclick = () => doPrint('one');
 $('#printTest').onclick = () => doPrint('test');
+
+// Overlay scrollbar for each desktop pane: shows while scrolling (or when the pointer nears the
+// right edge), fades after a moment, and can be dragged. Also sets the edge fades on the pane.
+function overlayScrollbar(sc){
+  const thumb = div('oscroll');
+  sc.parentElement.append(thumb);
+  let hideTimer, dragging = false;
+  const metrics = () => {
+    const sh = sc.scrollHeight, ch = sc.clientHeight;
+    return { sh, ch, h: Math.max(36, ch * ch / sh) };
+  };
+  const place = () => {
+    const { sh, ch, h } = metrics();
+    const room = sh - ch;
+    sc.style.setProperty('--ft', sc.scrollTop > 2 ? '18px' : '0px');
+    sc.style.setProperty('--fb', room - sc.scrollTop > 2 ? '28px' : '0px');
+    thumb.hidden = room <= 1;
+    if (thumb.hidden) return false;
+    thumb.style.height = h + 'px';
+    thumb.style.top = sc.offsetTop + 4 + (sc.scrollTop / room) * (ch - h - 8) + 'px';
+    thumb.style.left = sc.offsetLeft + sc.offsetWidth - 8 + 'px';
+    return true;
+  };
+  const hideLater = () => { clearTimeout(hideTimer); hideTimer = setTimeout(() => { if (!dragging) thumb.classList.remove('on'); }, 900); };
+  const show = () => { if (!place()) return; thumb.classList.add('on'); hideLater(); };
+
+  sc.addEventListener('scroll', show, { passive:true });
+  sc.addEventListener('pointermove', e => { if (sc.getBoundingClientRect().right - e.clientX < 18) show(); });
+  thumb.addEventListener('pointerenter', () => { clearTimeout(hideTimer); thumb.classList.add('on'); });
+  thumb.addEventListener('pointerleave', hideLater);
+  thumb.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { thumb.setPointerCapture(e.pointerId); } catch {}
+    dragging = true;
+    thumb.classList.add('drag');
+    const { sh, ch, h } = metrics();
+    const startY = e.clientY, startTop = sc.scrollTop, ratio = (sh - ch) / (ch - h - 8);
+    const move = ev => { sc.scrollTop = startTop + (ev.clientY - startY) * ratio; };
+    const up = () => {
+      dragging = false;
+      thumb.classList.remove('drag');
+      thumb.removeEventListener('pointermove', move);
+      thumb.removeEventListener('pointerup', up);
+      thumb.removeEventListener('pointercancel', up);
+      hideLater();
+    };
+    thumb.addEventListener('pointermove', move);
+    thumb.addEventListener('pointerup', up);
+    thumb.addEventListener('pointercancel', up);
+  });
+  // Content grows and shrinks (addresses, logo, open FAQs), so keep the fades and thumb in step.
+  const ro = new ResizeObserver(place);
+  ro.observe(sc);
+  [...sc.children].forEach(c => ro.observe(c));
+  place();
+}
+document.querySelectorAll('.sidebar, .content').forEach(overlayScrollbar);
 
 let rt;
 window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderPreview, 100); });
