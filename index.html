@@ -47,9 +47,14 @@ textarea.dropping{outline:2px dashed var(--accent);outline-offset:-1px}
 .site-foot a{color:var(--accent)}
 main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;padding:16px;align-items:start}
 @media (max-width:860px){main{grid-template-columns:1fr}}
-/* Desktop: the settings column is its own pane that scrolls on its own, so the preview never scrolls away. */
-@media (min-width:861px){
-  .sidebar{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;overscroll-behavior:contain;padding-right:6px;scrollbar-width:thin}
+/* Desktop: an app shell. The header stays put and each column scrolls on its own inside
+   the space below it, so neither pane can run past the bottom of the window.
+   Screen only: in print this would clip the envelopes to one page. */
+@media screen and (min-width:861px){
+  body{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  header{flex:none}
+  main{flex:1;min-height:0;align-items:stretch;grid-template-rows:minmax(0,1fr)}
+  .sidebar,.content{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:6px}
 }
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 .panel + .panel{margin-top:12px}
@@ -207,7 +212,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
     </section>
   </div>
 
-  <div>
+  <div class="content">
     <section class="panel">
       <div class="toolbar">
         <div class="nav">
@@ -294,14 +299,14 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
     <p>Yes. Choose an image in the Logo panel or drop one onto the envelope preview, then drag it into place and pull its corner to resize. Tick <i>Print in black &amp; white</i> for a mono printer.</p>
   </details>
 </section>
-  </div>
-</main>
 
 <footer class="site-foot">
   <span>Made by <a href="https://squirrelscripts.github.io/">SquirrelScripts</a> 🐿️</span>
   <a href="https://squirrelscripts.github.io/">More free tools →</a>
   <a href="https://buymeacoffee.com/eblank" target="_blank" rel="noopener">☕ Buy me a coffee</a>
 </footer>
+  </div>
+</main>
 
 <div id="measure" aria-hidden="true"></div>
 <div id="printRoot"></div>
