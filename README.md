@@ -4,7 +4,7 @@
 
 **Use it → [squirrelscripts.github.io/EnvelopePrint](https://squirrelscripts.github.io/EnvelopePrint/)**
 
-One HTML file. No install, no signup, and nothing leaves your browser.
+One HTML file. No install, no signup, and your addresses never leave your browser. (The hosted page counts anonymous visits with GoatCounter, with no cookies; a downloaded copy counts nothing.)
 
 ## What it does
 
