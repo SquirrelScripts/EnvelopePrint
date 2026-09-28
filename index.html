@@ -283,7 +283,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
     <details class="panel sect" data-sect="printer">
       <summary><h2>Printer adjustments</h2><span class="meta"></span></summary>
       <div class="body">
-      <p class="hint" style="margin-top:0">These only affect printing. Set them once for your printer after a test envelope.</p>
+      <p class="hint" style="margin-top:0">These only affect printing, not the preview. Set them once for your printer after a test envelope.</p>
       <div class="row">
         <div><label for="nudgeX">Nudge right (in)</label><input id="nudgeX" data-key="nudgeX" type="number" step="0.05"></div>
         <div><label for="nudgeY">Nudge down (in)</label><input id="nudgeY" data-key="nudgeY" type="number" step="0.05"></div>
@@ -295,7 +295,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
         <option value="180">180° (upside down)</option>
         <option value="270">90° counter-clockwise</option>
       </select>
-      <p class="hint">Negative nudge moves left / up. If an envelope comes out sideways or upside down, try a rotation.</p>
+      <p class="hint">Negative nudge moves left / up. Nudge shows on the plain-paper test sheet too; rotation only applies to real envelopes. If an envelope comes out sideways or upside down, try a rotation.</p>
       </div>
     </details>
 
@@ -1019,7 +1019,9 @@ function buildPrint(mode){
     const sheet = div('sheet');
     sheet.style.width = pw + 'in';
     sheet.style.height = (ph - 0.02) + 'in';  // a hair short so rounding never spills a blank page
-    const env = buildEnvelope(lines, null, { print:true, nudge:!test, stamp:test });
+    // Nudge applies to the test sheet too, so its effect shows against the dashed outline.
+    // Rotation doesn't: letter paper feeds differently from envelopes.
+    const env = buildEnvelope(lines, null, { print:true, nudge:true, stamp:test });
     env.style.position = 'absolute';
     env.style.transformOrigin = '0 0';
     if (test) {
@@ -1027,7 +1029,12 @@ function buildPrint(mode){
       env.style.top = ((ph - h) / 2) + 'in';
       env.prepend(div('outline'));
       const cap = div('caption');
-      cap.textContent = `Test sheet · ${sizeName()} · ${fmt(w)} × ${fmt(h)} in · lay an envelope over the dashed outline`;
+      const nx = +state.nudgeX || 0, ny = +state.nudgeY || 0;
+      const adj = [
+        nx || ny ? `printer nudge applied: ${fmt(Math.abs(nx))} in ${nx < 0 ? 'left' : 'right'}, ${fmt(Math.abs(ny))} in ${ny < 0 ? 'up' : 'down'}` : '',
+        +state.rotate ? `rotation (${+state.rotate}°) applies to envelopes only` : '',
+      ].filter(Boolean).join(' · ');
+      cap.textContent = `Test sheet · ${sizeName()} · ${fmt(w)} × ${fmt(h)} in · lay an envelope over the dashed outline` + (adj ? ` · ${adj}` : '');
       sheet.append(cap);
     } else {
       env.style.left = '0';
