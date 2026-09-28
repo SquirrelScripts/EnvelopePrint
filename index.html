@@ -230,10 +230,11 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
       <textarea id="recipients" data-key="recipients" rows="11" placeholder="Jane Doe&#10;123 Main Street&#10;Springfield, IL 62701&#10;&#10;John Smith&#10;456 Oak Avenue, Apt 2&#10;Riverside, CA 92501"></textarea>
       <div class="btn-row">
         <button id="importBtn">Import spreadsheet (CSV)…</button>
+        <button id="templateBtn" title="A ready-made spreadsheet with the right columns">Download template</button>
         <button id="clearBtn">Clear</button>
       </div>
       <input type="file" id="importFile" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" hidden>
-      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. Columns named Name, Address, City, State and ZIP are recognized and put in the right order.</p>
+      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. Columns named Name, Address, City, State and ZIP are recognized and put in the right order. Starting a list from scratch? <b>Download template</b> gives you a spreadsheet with the columns already set up.</p>
       </div>
     </details>
 
@@ -359,7 +360,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   <h2>Questions</h2>
   <details>
     <summary>How do I print envelopes from an Excel or Google Sheets list?</summary>
-    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use <i>Import spreadsheet</i>. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero in the spreadsheet (2134 instead of 02134) are fixed automatically.</p>
+    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use <i>Import spreadsheet</i>. Starting from nothing? <i>Download template</i> gives you a spreadsheet with the columns already named: fill in one address per row, save it as CSV, and import it. Its two example rows are skipped automatically. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero in the spreadsheet (2134 instead of 02134) are fixed automatically.</p>
   </details>
   <details>
     <summary>Why is the address printing in the wrong spot?</summary>
@@ -633,6 +634,33 @@ function parseDelimited(text){
   return rows;
 }
 
+// A starter spreadsheet: the column names the importer recognizes, plus two example rows.
+// The examples are skipped on import, so forgetting to delete them doesn't print them.
+const TEMPLATE = [
+  ['First Name', 'Last Name', 'Company', 'Address', 'Address 2', 'City', 'State', 'ZIP', 'Country'],
+  ['Jane', 'Doe', '', '123 Main Street', 'Apt 4', 'Springfield', 'IL', '62701', ''],
+  ['John', 'Smith', 'Acme Co.', '456 Oak Avenue', '', 'Riverside', 'CA', '92501', ''],
+];
+const TEMPLATE_EXAMPLES = new Set(rowsToAddresses(TEMPLATE).map(a => a.join('\n')));
+
+function templateCSV(){
+  const cell = v => /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  // The byte-order mark makes Excel open the file as UTF-8, so accented names survive.
+  return '﻿' + TEMPLATE.map(r => r.map(cell).join(',')).join('\r\n') + '\r\n';
+}
+
+function downloadTemplate(){
+  const url = URL.createObjectURL(new Blob([templateCSV()], { type:'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'envelope-addresses-template.csv';
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Template downloaded. Put one address per row under the headings, save as CSV, then import it here.', { ms:6000 });
+}
+
 function importFile(file){
   if (!file) return;
   if (/\.(xlsx?|numbers|ods)$/i.test(file.name)) {
@@ -640,13 +668,20 @@ function importFile(file){
     return;
   }
   file.text().then(text => {
-    const found = rowsToAddresses(parseDelimited(text));
-    if (!found.length) { toast(`Couldn’t find any addresses in ${file.name}.`, { warn:true }); return; }
+    const all = rowsToAddresses(parseDelimited(text));
+    const found = all.filter(a => !TEMPLATE_EXAMPLES.has(a.join('\n')));
+    const skipped = all.length - found.length;
+    if (!found.length) {
+      toast(skipped ? 'That’s still just the template’s example rows. Add your own addresses under the headings.'
+                    : `Couldn’t find any addresses in ${file.name}.`, { warn:true, ms:6000 });
+      return;
+    }
     if (list.length && !confirm(`Replace the ${plural(list.length, 'address', 'addresses')} already in the list?`)) return;
     state.recipients = found.map(a => a.join('\n')).join('\n\n');
     state.idx = 0;
     $('#recipients').value = state.recipients;
-    toast(`Imported ${plural(found.length, 'address', 'addresses')} from ${file.name}.`);
+    toast(`Imported ${plural(found.length, 'address', 'addresses')} from ${file.name}.` +
+          (skipped ? ` Skipped the template’s ${plural(skipped, 'example row')}.` : ''));
     save();
     render();
   });
@@ -1078,6 +1113,7 @@ $('#resetAll').onclick = () => {
   location.reload();   // a fresh load is the one path guaranteed to match a first visit
 };
 $('#importBtn').onclick = () => $('#importFile').click();
+$('#templateBtn').onclick = downloadTemplate;
 $('#importFile').onchange = e => { importFile(e.target.files[0]); e.target.value = ''; };
 $('#clearBtn').onclick = () => {
   if (list.length && !confirm('Clear the address list?')) return;
