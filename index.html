@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Envelope Printer – Print Addresses on Envelopes from a List or Spreadsheet</title>
+<meta name="description" content="Print addresses on envelopes without fighting Word. Paste a list or import a spreadsheet, pick #10, A7, DL or any size, drag to place, and print a whole batch. Free, no signup, nothing uploaded.">
+<meta property="og:title" content="Free Envelope Printer">
+<meta property="og:description" content="Paste or import addresses, pick an envelope size, drag to place, print. Free, no signup, nothing leaves your browser.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%89%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style id="pageStyle"></style>
+<style>
+:root{
+  --bg:#f4f2ee; --panel:#fff; --ink:#1d1d1f; --muted:#6b6b70; --line:#dedad3;
+  --accent:#2f5d8a; --accent-ink:#fff; --field:#fff; --warn:#b3261e; --warn-bg:#fdecea;
+  --desk:#e4e0d8; --paper:#fffdf8;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1b1c1e; --panel:#242528; --ink:#ececee; --muted:#9a9aa1; --line:#3a3b3f;
+    --accent:#7fa8d6; --accent-ink:#0f1720; --field:#1b1c1e; --warn:#ff8a80; --warn-bg:#3a2322;
+    --desk:#2e2f33;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+header span{color:var(--muted)}
+header .privacy{margin-left:auto;font-size:13px}
+@media (max-width:860px){ header .privacy{margin-left:0} }
+.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+textarea.dropping{outline:2px dashed var(--accent);outline-offset:-1px}
+.guide{max-width:860px;margin:8px auto 0;padding:0 16px 8px}
+.guide h2{font-size:20px;letter-spacing:0;text-transform:none;color:var(--ink);margin:28px 0 10px}
+.guide ol{padding-left:22px;margin:0}
+.guide li{margin:5px 0}
+.guide details{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0}
+.guide summary{font-weight:600;cursor:pointer}
+.guide details p{margin:8px 0 2px;color:var(--muted)}
+.guide table{border-collapse:collapse;margin-top:8px;font-size:13px}
+.guide td,.guide th{border:1px solid var(--line);padding:4px 10px;text-align:left}
+.site-foot{border-top:1px solid var(--line);margin-top:28px;padding:18px 20px 28px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:13px}
+.site-foot a{color:var(--accent)}
+main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;padding:16px;align-items:start}
+@media (max-width:860px){main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.panel + .panel{margin-top:12px}
+h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+label{display:block;margin:10px 0 4px;font-weight:600;font-size:13px}
+label.inline{display:flex;align-items:center;gap:8px;font-weight:500}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+input[type=checkbox]{width:auto;margin:0}
+textarea{resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.row{display:flex;gap:10px}
+.row > *{flex:1;min-width:0}
+.hint{color:var(--muted);font-size:12px;margin:4px 0 0}
+.count{float:right;color:var(--muted);font-weight:500}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.toolbar .spacer{flex:1}
+.nav{display:flex;align-items:center;gap:6px}
+.nav span{min-width:90px;text-align:center;color:var(--muted)}
+.stage{background:var(--desk);border-radius:8px;padding:24px;display:flex;justify-content:center;align-items:center;min-height:240px;overflow:hidden}
+.env{position:relative;background:var(--paper);color:#111;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.block{position:absolute;white-space:pre;line-height:1.2;cursor:grab;outline:1px dashed transparent;outline-offset:2px;user-select:none;touch-action:none}
+.block:hover,.block:focus{outline-color:var(--accent)}
+.block.dragging{cursor:grabbing;outline-color:var(--accent)}
+.block.over{outline:2px solid var(--warn)}
+.block.placeholder{opacity:.35;font-style:italic}
+.block.logo{line-height:0}
+.block.logo img{display:block;width:100%;height:100%;pointer-events:none}
+.handle{position:absolute;right:-6px;bottom:-6px;width:11px;height:11px;background:var(--accent);border:1px solid #fff;border-radius:2px;cursor:nwse-resize;opacity:0}
+.block.logo:hover .handle,.block.logo:focus .handle,.block.logo.dragging .handle{opacity:1}
+.stage.dropping{outline:2px dashed var(--accent);outline-offset:-8px}
+.logo-row{display:flex;align-items:center;gap:10px}
+.logo-row img{width:64px;height:48px;object-fit:contain;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:4px}
+.logo-row .spacer{flex:1}
+.stamp{position:absolute;border:1px dashed #b9b4aa;color:#a39e94;font:10px "Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.pos{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:12px}
+.pos label{margin-top:0;font-weight:500;color:var(--muted);font-size:12px}
+.warn{display:none;margin-top:12px;padding:8px 10px;border-radius:6px;background:var(--warn-bg);color:var(--warn);font-size:13px}
+.warn.show{display:block}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tips{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
+.tips li{margin:3px 0}
+#measure{position:absolute;left:-10000px;top:0;visibility:hidden}
+#printRoot{display:none}
+@media (max-width:600px){ main{padding:10px} }
+
+@media print{
+  html,body{background:#fff;margin:0;padding:0}
+  body > :not(#printRoot){display:none !important}
+  #printRoot{display:block}
+  .sheet{position:relative;overflow:hidden;break-after:page;page-break-after:always}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+  .sheet .env{background:none;box-shadow:none;color:#000}
+  .sheet .block{outline:none}
+  .sheet .outline{position:absolute;inset:0;border:1px dashed #888}
+  .sheet .stamp{border-color:#aaa;color:#aaa}
+  .sheet .caption{position:absolute;left:.5in;bottom:.4in;font:9pt Arial,sans-serif;color:#555}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Free Envelope Printer</h1>
+  <span>Paste or import addresses, pick a size, drag to place, print.</span>
+  <span class="privacy">🔒 Nothing leaves your browser. No signup, no upload.</span>
+</header>
+
+<main>
+  <div>
+    <section class="panel">
+      <h2>Envelope</h2>
+      <select id="size" data-key="size" aria-label="Envelope size"></select>
+      <div class="row" id="customRow" hidden>
+        <div><label for="customW">Width (in)</label><input id="customW" data-key="customW" type="number" step="0.125" min="1"></div>
+        <div><label for="customH">Height (in)</label><input id="customH" data-key="customH" type="number" step="0.125" min="1"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Recipients <span class="count" id="count"></span></h2>
+      <textarea id="recipients" data-key="recipients" rows="11" placeholder="Jane Doe&#10;123 Main Street&#10;Springfield, IL 62701&#10;&#10;John Smith&#10;456 Oak Avenue, Apt 2&#10;Riverside, CA 92501"></textarea>
+      <div class="btn-row">
+        <button id="importBtn">Import spreadsheet (CSV)…</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+      <input type="file" id="importFile" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" hidden>
+      <p class="hint" id="importNote"></p>
+      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. Columns named Name, Address, City, State and ZIP are recognized and put in the right order.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Return address</h2>
+      <label class="inline"><input type="checkbox" data-key="printReturn"> Print a return address</label>
+      <textarea data-key="returnText" rows="4" placeholder="Your Name&#10;789 Elm Street&#10;Springfield, IL 62704" aria-label="Return address" style="margin-top:8px"></textarea>
+    </section>
+
+    <section class="panel">
+      <h2>Logo</h2>
+      <div id="logoEmpty">
+        <button id="logoPick">Choose an image…</button>
+        <p class="hint">PNG, JPG or SVG. You can also drop an image onto the envelope preview.</p>
+      </div>
+      <div id="logoSet" hidden>
+        <div class="logo-row">
+          <img id="logoThumb" alt="Logo">
+          <span class="spacer"></span>
+          <button id="logoReplace">Replace</button>
+          <button id="logoRemove">Remove</button>
+        </div>
+        <label for="logoW">Width (in)</label>
+        <input id="logoW" data-key="logoW" type="number" min="0.2" step="0.05">
+        <label class="inline" style="margin-top:10px"><input type="checkbox" data-key="logoGray"> Print in black &amp; white</label>
+      </div>
+      <input type="file" id="logoFile" accept="image/*" hidden>
+      <p class="hint" id="logoNote"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Text</h2>
+      <label for="font">Font</label>
+      <select id="font" data-key="font"></select>
+      <div class="row">
+        <div><label for="rcpPt">Address size (pt)</label><input id="rcpPt" data-key="rcpPt" type="number" min="6" max="36" step="0.5"></div>
+        <div><label for="retPt">Return size (pt)</label><input id="retPt" data-key="retPt" type="number" min="6" max="36" step="0.5"></div>
+      </div>
+      <label class="inline" style="margin-top:12px"><input type="checkbox" data-key="caps"> ALL CAPS (what the post office prefers)</label>
+    </section>
+
+    <section class="panel">
+      <h2>Printer adjustments</h2>
+      <p class="hint" style="margin-top:0">These only affect printing. Set them once for your printer after a test envelope.</p>
+      <div class="row">
+        <div><label for="nudgeX">Nudge right (in)</label><input id="nudgeX" data-key="nudgeX" type="number" step="0.05"></div>
+        <div><label for="nudgeY">Nudge down (in)</label><input id="nudgeY" data-key="nudgeY" type="number" step="0.05"></div>
+      </div>
+      <label for="rotate">Rotate for printer</label>
+      <select id="rotate" data-key="rotate">
+        <option value="0">None</option>
+        <option value="90">90° clockwise</option>
+        <option value="180">180° (upside down)</option>
+        <option value="270">90° counter-clockwise</option>
+      </select>
+      <p class="hint">Negative nudge moves left / up. If an envelope comes out sideways or upside down, try a rotation.</p>
+    </section>
+  </div>
+
+  <div>
+    <section class="panel">
+      <div class="toolbar">
+        <div class="nav">
+          <button id="prev" aria-label="Previous address">‹</button>
+          <span id="navLabel"></span>
+          <button id="next" aria-label="Next address">›</button>
+        </div>
+        <span class="hint" id="sizeReadout" style="margin:0"></span>
+        <span class="spacer"></span>
+        <button id="reset">Reset placement</button>
+      </div>
+      <div class="stage" id="stage"></div>
+      <div class="pos">
+        <div><label for="rcpX">Address from left</label><input id="rcpX" type="number" step="0.05"></div>
+        <div><label for="rcpY">Address from top</label><input id="rcpY" type="number" step="0.05"></div>
+        <div><label for="retX">Return from left</label><input id="retX" type="number" step="0.05"></div>
+        <div><label for="retY">Return from top</label><input id="retY" type="number" step="0.05"></div>
+        <div id="logoPosX" hidden><label for="logoX">Logo from left</label><input id="logoX" type="number" step="0.05"></div>
+        <div id="logoPosY" hidden><label for="logoY">Logo from top</label><input id="logoY" type="number" step="0.05"></div>
+      </div>
+      <p class="hint">Drag anything on the envelope, or click it and use the arrow keys (hold Shift for bigger steps). Drag the logo's corner to resize it. Measurements are in inches.</p>
+      <div class="warn" id="warn"></div>
+      <div class="actions">
+        <button class="primary" id="printAll">Print all</button>
+        <button id="printOne">Print this one</button>
+        <button id="printTest">Test on plain paper</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Printing tips</h2>
+      <ul class="tips">
+        <li>In the print dialog, set <b>Margins</b> to <b>None</b> and <b>Scale</b> to <b>Default / 100%</b>, and turn off <b>Headers and footers</b>.</li>
+        <li><b>Test on plain paper</b> prints the envelope outline on a regular sheet. Hold an envelope over it to check the layout.</li>
+        <li>Then feed <b>one</b> real envelope with <b>Print this one</b>. If the text lands off, fix it under <b>Printer adjustments</b>. Those settings are saved.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<section class="guide">
+  <h2>How to print addresses on envelopes</h2>
+  <ol>
+    <li><b>Add your addresses.</b> Type or paste them with a blank line between each one, paste cells from a spreadsheet, or import a CSV file.</li>
+    <li><b>Pick the envelope size.</b> #10 is the standard business envelope. Greeting cards usually use A2, A7 or C6.</li>
+    <li><b>Place things.</b> Drag the address, return address and logo where you want them. The standard layout is already set up.</li>
+    <li><b>Check it on plain paper.</b> <i>Test on plain paper</i> prints an outline you can hold an envelope against.</li>
+    <li><b>Print one real envelope, then the batch.</b> If it lands a little off, fix it once under <i>Printer adjustments</i> and it's remembered.</li>
+  </ol>
+
+  <h2>Questions</h2>
+  <details>
+    <summary>How do I print envelopes from an Excel or Google Sheets list?</summary>
+    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use <i>Import spreadsheet</i>. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero in the spreadsheet (2134 instead of 02134) are fixed automatically.</p>
+  </details>
+  <details>
+    <summary>Why is the address printing in the wrong spot?</summary>
+    <p>Every printer feeds envelopes a little differently. Print one envelope, measure how far off it is, and enter that under <i>Printer adjustments</i> (a negative number moves left or up). If it comes out sideways or upside down, change <i>Rotate for printer</i>. In the print dialog, set Margins to None and Scale to 100%.</p>
+  </details>
+  <details>
+    <summary>What size is a #10 envelope? Which size do I need?</summary>
+    <p>The common ones:</p>
+    <table>
+      <tr><th>Envelope</th><th>Size</th><th>Used for</th></tr>
+      <tr><td>#10</td><td>9½ × 4⅛ in</td><td>Letters, bills, business mail</td></tr>
+      <tr><td>#9</td><td>8⅞ × 3⅞ in</td><td>Return envelopes that fit inside a #10</td></tr>
+      <tr><td>A2</td><td>5¾ × 4⅜ in</td><td>Small cards, RSVP cards</td></tr>
+      <tr><td>A7</td><td>7¼ × 5¼ in</td><td>5×7 cards and invitations</td></tr>
+      <tr><td>DL</td><td>220 × 110 mm</td><td>Standard letter envelope outside North America</td></tr>
+      <tr><td>C6</td><td>162 × 114 mm</td><td>A6 cards (A4 folded in quarters)</td></tr>
+    </table>
+    <p>Anything else: choose <i>Custom size</i> and type the width and height.</p>
+  </details>
+  <details>
+    <summary>Are my addresses uploaded anywhere?</summary>
+    <p>No. This is a single web page that runs entirely in your browser. Your list, return address and logo are only saved in your own browser so they're there next time, and nothing is sent to a server.</p>
+  </details>
+  <details>
+    <summary>Which browser should I use?</summary>
+    <p>Chrome or Edge give the most reliable envelope sizing when printing. It works on Windows and Mac.</p>
+  </details>
+  <details>
+    <summary>Can I add a logo?</summary>
+    <p>Yes. Choose an image in the Logo panel or drop one onto the envelope preview, then drag it into place and pull its corner to resize. Tick <i>Print in black &amp; white</i> for a mono printer.</p>
+  </details>
+</section>
+
+<footer class="site-foot">
+  <span>Made by <a href="https://squirrelscripts.github.io/">SquirrelScripts</a> 🐿️</span>
+  <a href="https://squirrelscripts.github.io/">More free tools →</a>
+  <a href="https://buymeacoffee.com/eblank" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+</footer>
+
+<div id="measure" aria-hidden="true"></div>
+<div id="printRoot"></div>
+
+<script>
+const SIZES = [
+  { key:'10',      name:'#10 (business)',        w:9.5,    h:4.125 },
+  { key:'9',       name:'#9',                    w:8.875,  h:3.875 },
+  { key:'6.75',    name:'#6¾ (personal)',        w:6.5,    h:3.625 },
+  { key:'monarch', name:'Monarch (#7¾)',         w:7.5,    h:3.875 },
+  { key:'11',      name:'#11',                   w:10.375, h:4.5 },
+  { key:'a2',      name:'A2 (card)',             w:5.75,   h:4.375 },
+  { key:'a6',      name:'A6 (card)',             w:6.5,    h:4.75 },
+  { key:'a7',      name:'A7 (5×7 card)',         w:7.25,   h:5.25 },
+  { key:'a9',      name:'A9',                    w:8.75,   h:5.75 },
+  { key:'6x9',     name:'6 × 9 booklet',         w:9,      h:6 },
+  { key:'9x12',    name:'9 × 12 catalog',        w:12,     h:9 },
+  { key:'10x13',   name:'10 × 13 catalog',       w:13,     h:10 },
+  { key:'dl',      name:'DL (110 × 220 mm)',     w:8.661,  h:4.331 },
+  { key:'c6',      name:'C6 (114 × 162 mm)',     w:6.378,  h:4.488 },
+  { key:'c5',      name:'C5 (162 × 229 mm)',     w:9.016,  h:6.378 },
+  { key:'c4',      name:'C4 (229 × 324 mm)',     w:12.756, h:9.016 },
+  { key:'custom',  name:'Custom size…' },
+];
+const FONTS = [
+  ['Arial',               'Arial, Helvetica, sans-serif'],
+  ['Calibri',             'Calibri, Carlito, sans-serif'],
+  ['Segoe UI',            '"Segoe UI", system-ui, sans-serif'],
+  ['Verdana',             'Verdana, Geneva, sans-serif'],
+  ['Tahoma',              'Tahoma, Geneva, sans-serif'],
+  ['Century Gothic',      '"Century Gothic", sans-serif'],
+  ['Georgia',             'Georgia, serif'],
+  ['Times New Roman',     '"Times New Roman", Times, serif'],
+  ['Garamond',            'Garamond, "EB Garamond", serif'],
+  ['Palatino',            '"Palatino Linotype", Palatino, serif'],
+  ['Courier New',         '"Courier New", Courier, monospace'],
+];
+const SAMPLE = ['Jane Doe', '123 Main Street', 'Springfield, IL 62701'];
+const KEY = 'envelopePrint.v1';
+
+const DEFAULTS = {
+  size:'10', customW:9.5, customH:4.125,
+  recipients:'', returnText:'', printReturn:true,
+  font:FONTS[0][1], rcpPt:12, retPt:10, caps:false,
+  nudgeX:0, nudgeY:0, rotate:'0',
+  logo:null, logoW:1, logoGray:false,
+  positions:{}, idx:0,
+};
+const state = Object.assign({}, DEFAULTS, load());
+
+function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); return true; } catch { return false; } }
+
+const $ = s => document.querySelector(s);
+const div = cls => { const d = document.createElement('div'); if (cls) d.className = cls; return d; };
+const round2 = v => Math.round(v * 100) / 100;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fmt = v => String(+(+v).toFixed(3));
+
+function dims(){
+  if (state.size === 'custom') return { w: Math.max(1, +state.customW || 0), h: Math.max(1, +state.customH || 0) };
+  const s = SIZES.find(s => s.key === state.size) || SIZES[0];
+  return { w: s.w, h: s.h };
+}
+function sizeName(){ return (SIZES.find(s => s.key === state.size) || SIZES[0]).name.replace('…',''); }
+function posKey(){ const { w, h } = dims(); return state.size === 'custom' ? `custom:${w}x${h}` : state.size; }
+function getPos(){
+  const k = posKey();
+  if (!state.positions[k]) {
+    const { w, h } = dims();
+    state.positions[k] = { ret:{ x:0.3, y:0.3 }, rcp:{ x:round2(w * 0.42), y:round2(h * 0.48) } };
+  }
+  const p = state.positions[k];
+  // The logo takes the top-left corner; slide an untouched return address over to make room.
+  if (state.logo && !p.logo) {
+    p.logo = { x:0.3, y:0.3 };
+    if (p.ret.x < 0.35 && p.ret.y < 0.35) { p.ret.x = round2(0.3 + (+state.logoW || 1) + 0.15); p.retShifted = true; }
+  }
+  return p;
+}
+const logoH = () => state.logo ? (+state.logoW || 1) * state.logo.h / state.logo.w : 0;
+
+function loadLogo(file){
+  if (!file || !file.type.startsWith('image/')) { $('#logoNote').textContent = 'That file isn’t an image.'; return; }
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const nw = img.naturalWidth || 600, nh = img.naturalHeight || 300;
+    // Shrink big photos so they fit in saved settings; SVGs get rasterized large enough to stay crisp.
+    const s = file.type === 'image/svg+xml' ? 1200 / Math.max(nw, nh) : Math.min(1, 1200 / Math.max(nw, nh));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(nw * s));
+    c.height = Math.max(1, Math.round(nh * s));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    state.logo = { src:c.toDataURL('image/png'), w:c.width, h:c.height };
+    state.logoW = round2(Math.min(1.2, 0.9 * c.width / c.height));  // at most 1.2" wide or 0.9" tall
+    $('#logoW').value = fmt(state.logoW);
+    const ok = save();
+    $('#logoNote').textContent = ok ? '' : 'This image is too big to remember after you close the page, but it will print fine now.';
+    render();
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); $('#logoNote').textContent = 'Couldn’t read that image.'; };
+  img.src = url;
+}
+
+function removeLogo(){
+  state.logo = null;
+  for (const p of Object.values(state.positions)) {
+    if (p.retShifted && p.ret.y < 0.35) p.ret.x = 0.3;
+    delete p.logo; delete p.retShifted;
+  }
+  $('#logoNote').textContent = '';
+  save();
+  render();
+}
+
+// Blank-line separated blocks, or tab-separated rows pasted from a spreadsheet.
+function parseRecipients(text){
+  text = (text || '').replace(/\r/g, '');
+  if (text.includes('\t')) return rowsToAddresses(text.split('\n').map(r => r.split('\t')));
+  return text.split(/\n\s*\n/).map(b => b.split('\n').map(l => l.trim()).filter(Boolean)).filter(b => b.length);
+}
+
+// Spreadsheets drop leading zeros: 2134 -> 02134.
+function fixZip(zip){
+  const m = /^(\d{3,5})(-\d{4})?$/.exec(zip);
+  return m ? m[1].padStart(5, '0') + (m[2] || '') : zip;
+}
+function cityLine(city, state, zip){
+  const st = /^[a-z]{2}$/i.test(state) ? state.toUpperCase() : state;
+  const z = /^[A-Z]{2}$/.test(st) || !st ? fixZip(zip) : zip;
+  return [city && st ? city + ',' : city, st, z].filter(Boolean).join(' ');
+}
+
+const COLUMNS = [                          // checked in order; first matching header wins each field
+  ['name',    /^(full)?name$|^recipient|^addressee|^mailingname|^displayname/],
+  ['first',   /^first|^given|^fname/],
+  ['last',    /^last|^surname|^family|^lname/],
+  ['company', /^company|^organi[sz]ation|^business|^org$|^employer/],
+  ['addr2',   /^(address|addr|street)(line)?2$|^apt|^suite|^unit|^extended/],
+  ['addr1',   /^(address|addr|street)(line)?1?$|^streetaddress|^mailingaddress|^homeaddress/],
+  ['city',    /^city|^town|^locality/],
+  ['state',   /^state|^province|^region|^st$/],
+  ['zip',     /^zip|^postal|^postcode/],
+  ['country', /^country/],
+];
+
+// Rows of cells -> address blocks. Uses the header row when it names the columns;
+// otherwise treats each row as lines and joins trailing City / ST / ZIP cells.
+function rowsToAddresses(rows){
+  rows = rows.map(r => r.map(c => (c || '').trim())).filter(r => r.some(Boolean));
+  if (!rows.length) return [];
+  // "Address 1 - City" (Google Contacts), "Home Street" (Outlook) -> "city", "street"
+  const head = rows[0].map(h => {
+    const n = h.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return [n, n.replace(/^(address\d*|home|mailing|primary|business|work|other)/, '')];
+  });
+  const col = {};
+  for (const [field, re] of COLUMNS) {
+    const i = head.findIndex((h, i) => h.some(v => v && re.test(v)) && !Object.values(col).includes(i));
+    if (i >= 0) col[field] = i;
+  }
+  if (col.addr1 !== undefined || col.city !== undefined) {
+    const get = (r, f) => col[f] === undefined ? '' : (r[col[f]] || '');
+    return rows.slice(1).map(r => [
+      get(r, 'name') || [get(r, 'first'), get(r, 'last')].filter(Boolean).join(' '),
+      get(r, 'company'),
+      get(r, 'addr1'),
+      get(r, 'addr2'),
+      cityLine(get(r, 'city'), get(r, 'state'), get(r, 'zip')),
+      get(r, 'country'),
+    ].filter(Boolean)).filter(a => a.length);
+  }
+  if (/\b(name|address|street|city|state|zip)\b/i.test(rows[0].join(' '))) rows.shift();
+  return rows.map(r => {
+    const cells = r.filter(Boolean);
+    const n = cells.length;
+    if (n >= 3 && /^\d{3,5}(-\d{4})?$/.test(cells[n - 1]) && /^[A-Za-z]{2}$/.test(cells[n - 2]))
+      return [...cells.slice(0, n - 3), cityLine(cells[n - 3], cells[n - 2], cells[n - 1])];
+    return cells;
+  }).filter(a => a.length);
+}
+
+function parseDelimited(text){
+  text = text.replace(/^﻿/, '');
+  const first = text.split('\n')[0];
+  const delim = first.includes('\t') && !first.includes(',') ? '\t' : ',';
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else quoted = false; }
+      else cell += c;
+    }
+    else if (c === '"') quoted = true;
+    else if (c === delim) { row.push(cell); cell = ''; }
+    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else if (c !== '\r') cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+function importFile(file){
+  const note = $('#importNote');
+  if (!file) return;
+  if (/\.(xlsx?|numbers|ods)$/i.test(file.name)) {
+    note.textContent = 'Save the sheet as CSV first (File › Save As › CSV), or just copy the cells and paste them in.';
+    return;
+  }
+  file.text().then(text => {
+    const found = rowsToAddresses(parseDelimited(text));
+    if (!found.length) { note.textContent = `Couldn’t find any addresses in ${file.name}.`; return; }
+    if (list.length && !confirm(`Replace the ${list.length} address${list.length === 1 ? '' : 'es'} already in the list?`)) return;
+    state.recipients = found.map(a => a.join('\n')).join('\n\n');
+    state.idx = 0;
+    $('#recipients').value = state.recipients;
+    note.textContent = `Imported ${found.length} address${found.length === 1 ? '' : 'es'} from ${file.name}.`;
+    save();
+    render();
+  });
+}
+
+// ppi = pixels per inch for on-screen; null = real inches for printing.
+function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false } = {}){
+  const { w, h } = dims();
+  const pos = getPos();
+  const U = v => ppi ? (v * ppi) + 'px' : v + 'in';
+  const P = pt => ppi ? (pt * ppi / 72) + 'px' : pt + 'pt';
+  const nx = nudge ? (+state.nudgeX || 0) : 0;
+  const ny = nudge ? (+state.nudgeY || 0) : 0;
+
+  const env = div('env');
+  env.style.width = U(w);
+  env.style.height = U(h);
+  env.style.fontFamily = state.font;
+  if (state.caps) env.style.textTransform = 'uppercase';
+
+  if (stamp) {
+    const st = div('stamp');
+    Object.assign(st.style, { width:U(0.875), height:U(1), right:U(0.25), top:U(0.25) });
+    st.textContent = 'stamp';
+    env.append(st);
+  }
+
+  const add = (which, text, p, pt, extra) => {
+    const b = div('block ' + which + (extra ? ' ' + extra : ''));
+    b.dataset.which = which;
+    b.style.left = U(p.x + nx);
+    b.style.top = U(p.y + ny);
+    b.style.fontSize = P(pt);
+    b.textContent = text;
+    if (!print) { b.tabIndex = 0; b.title = 'Drag to move · arrow keys to nudge'; }
+    env.append(b);
+  };
+
+  if (state.logo) {
+    const b = div('block logo');
+    b.dataset.which = 'logo';
+    b.style.left = U(pos.logo.x + nx);
+    b.style.top = U(pos.logo.y + ny);
+    b.style.width = U(+state.logoW || 1);
+    b.style.height = U(logoH());
+    const img = document.createElement('img');
+    img.src = state.logo.src;
+    img.alt = '';
+    if (state.logoGray) img.style.filter = 'grayscale(1)';
+    b.append(img);
+    if (!print) { b.tabIndex = 0; b.title = 'Drag to move · drag the corner to resize'; b.append(div('handle')); }
+    env.append(b);
+  }
+
+  if (state.printReturn) {
+    const ret = (state.returnText || '').split('\n').map(s => s.trim()).filter(Boolean).join('\n');
+    if (ret) add('ret', ret, pos.ret, +state.retPt || 10);
+    else if (!print) add('ret', 'Your return address', pos.ret, +state.retPt || 10, 'placeholder');
+  }
+  add('rcp', lines.join('\n'), pos.rcp, +state.rcpPt || 12);
+  return env;
+}
+
+let list = [];
+let currentLines = SAMPLE;
+let ppi = 60;
+
+function render(){
+  list = parseRecipients(state.recipients);
+  state.idx = clamp(state.idx | 0, 0, Math.max(0, list.length - 1));
+  currentLines = list[state.idx] || SAMPLE;
+  $('#count').textContent = list.length ? `${list.length} address${list.length === 1 ? '' : 'es'}` : '';
+  $('#navLabel').textContent = list.length ? `${state.idx + 1} of ${list.length}` : 'Sample';
+  $('#prev').disabled = state.idx <= 0;
+  $('#next').disabled = state.idx >= list.length - 1;
+  $('#printAll').textContent = list.length ? `Print all (${list.length})` : 'Print all';
+  $('#printAll').disabled = $('#printOne').disabled = !list.length;
+  $('#customRow').hidden = state.size !== 'custom';
+  $('#logoEmpty').hidden = !!state.logo;
+  $('#logoSet').hidden = $('#logoPosX').hidden = $('#logoPosY').hidden = !state.logo;
+  if (state.logo) { $('#logoThumb').src = state.logo.src; $('#logoThumb').style.filter = state.logoGray ? 'grayscale(1)' : ''; }
+  renderPreview();
+}
+
+function renderPreview(focusWhich){
+  const { w, h } = dims();
+  const stage = $('#stage');
+  const avail = stage.clientWidth - 48;
+  ppi = Math.max(10, Math.min(avail / w, 360 / h, 110));
+  const env = buildEnvelope(currentLines, ppi, { stamp:true });
+  stage.replaceChildren(env);
+  env.querySelectorAll('.block').forEach(makeInteractive);
+  $('#sizeReadout').textContent = `${sizeName()} · ${fmt(w)} × ${fmt(h)} in`;
+  syncPosInputs();
+  checkOverflow(env);
+  if (focusWhich) env.querySelector(`.block.${focusWhich}`)?.focus();
+}
+
+function syncPosInputs(){
+  const p = getPos();
+  const fields = [['rcpX', p.rcp.x], ['rcpY', p.rcp.y], ['retX', p.ret.x], ['retY', p.ret.y]];
+  if (p.logo) fields.push(['logoX', p.logo.x], ['logoY', p.logo.y]);
+  if (document.activeElement !== $('#logoW')) $('#logoW').value = fmt(state.logoW);
+  for (const [id, v] of fields) {
+    const el = document.getElementById(id);
+    if (document.activeElement !== el) el.value = fmt(v);
+  }
+}
+
+function overflows(env){
+  const er = env.getBoundingClientRect();
+  const bad = [];
+  env.querySelectorAll('.block:not(.placeholder)').forEach(b => {
+    const r = b.getBoundingClientRect();
+    if (r.right > er.right + 0.5 || r.bottom > er.bottom + 0.5 || r.left < er.left - 0.5 || r.top < er.top - 0.5) bad.push(b);
+  });
+  return bad;
+}
+
+function checkOverflow(env){
+  overflows(env).forEach(b => b.classList.add('over'));
+  // Check every address, not just the one on screen, so a long line doesn't surprise you mid-batch.
+  const box = $('#measure');
+  const badIdx = [];
+  list.forEach((lines, i) => {
+    const e = buildEnvelope(lines, ppi);
+    box.replaceChildren(e);
+    if (overflows(e).length) badIdx.push(i + 1);
+  });
+  box.replaceChildren();
+  const warn = $('#warn');
+  if (badIdx.length) {
+    const shown = badIdx.slice(0, 12).join(', ') + (badIdx.length > 12 ? '…' : '');
+    warn.textContent = `${badIdx.length === 1 ? 'Address' : badIdx.length + ' addresses'} #${shown} ${badIdx.length === 1 ? 'runs' : 'run'} off the edge of the envelope. Move the block or make the text smaller.`;
+    warn.classList.add('show');
+  } else if (overflows(env).length) {
+    warn.textContent = 'The return address or logo runs off the edge of the envelope.';
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
+}
+
+function makeResizable(b){
+  const handle = b.querySelector('.handle');
+  if (!handle) return;
+  handle.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    try { handle.setPointerCapture(e.pointerId); } catch {}
+    b.classList.add('dragging');
+    const sx = e.clientX, ow = +state.logoW || 1;
+    const ratio = state.logo.h / state.logo.w;
+    const move = ev => {
+      state.logoW = clamp(round2(ow + (ev.clientX - sx) / ppi), 0.2, dims().w);
+      b.style.width = state.logoW * ppi + 'px';
+      b.style.height = state.logoW * ratio * ppi + 'px';
+      $('#logoW').value = fmt(state.logoW);
+    };
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      handle.removeEventListener('pointercancel', up);
+      save();
+      renderPreview('logo');
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+    handle.addEventListener('pointercancel', up);
+  });
+}
+
+function makeInteractive(b){
+  const which = b.dataset.which;
+  makeResizable(b);
+  b.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    b.focus();
+    try { b.setPointerCapture(e.pointerId); } catch {}
+    b.classList.add('dragging');
+    const p = getPos()[which];
+    const sx = e.clientX, sy = e.clientY, ox = p.x, oy = p.y;
+    const { w, h } = dims();
+    const move = ev => {
+      p.x = clamp(round2(ox + (ev.clientX - sx) / ppi), 0, w);
+      p.y = clamp(round2(oy + (ev.clientY - sy) / ppi), 0, h);
+      b.style.left = p.x * ppi + 'px';
+      b.style.top = p.y * ppi + 'px';
+      syncPosInputs();
+    };
+    const up = () => {
+      b.removeEventListener('pointermove', move);
+      b.removeEventListener('pointerup', up);
+      b.removeEventListener('pointercancel', up);
+      save();
+      renderPreview(which);
+    };
+    b.addEventListener('pointermove', move);
+    b.addEventListener('pointerup', up);
+    b.addEventListener('pointercancel', up);
+  });
+  b.addEventListener('keydown', e => {
+    const d = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const step = e.shiftKey ? 0.25 : 0.05;
+    const { w, h } = dims();
+    const p = getPos()[which];
+    p.x = clamp(round2(p.x + d[0] * step), 0, w);
+    p.y = clamp(round2(p.y + d[1] * step), 0, h);
+    save();
+    renderPreview(which);
+  });
+}
+
+async function doPrint(mode){
+  const { w, h } = dims();
+  const test = mode === 'test';
+  const rot = test ? 0 : (+state.rotate || 0);
+  const items = mode === 'all' ? list : [list[state.idx] || SAMPLE];
+  if (!items.length) return;
+
+  let pw, ph;
+  if (test) {
+    if (w <= 10.5 && h <= 8) { pw = 11; ph = 8.5; }
+    else if (w <= 8 && h <= 10.5) { pw = 8.5; ph = 11; }
+    else { pw = Math.ceil(w + 1); ph = Math.ceil(h + 1); }
+  } else {
+    [pw, ph] = rot % 180 ? [h, w] : [w, h];
+  }
+  $('#pageStyle').textContent = `@page { size: ${pw}in ${ph}in; margin: 0; }`;
+
+  const transforms = {
+    0:   'none',
+    90:  `translateX(${h}in) rotate(90deg)`,
+    180: `translate(${w}in, ${h}in) rotate(180deg)`,
+    270: `translateY(${w}in) rotate(-90deg)`,
+  };
+
+  const root = $('#printRoot');
+  root.replaceChildren();
+  for (const lines of items) {
+    const sheet = div('sheet');
+    sheet.style.width = pw + 'in';
+    sheet.style.height = (ph - 0.02) + 'in';  // a hair short so rounding never spills a blank page
+    const env = buildEnvelope(lines, null, { print:true, nudge:!test, stamp:test });
+    env.style.position = 'absolute';
+    env.style.transformOrigin = '0 0';
+    if (test) {
+      env.style.left = ((pw - w) / 2) + 'in';
+      env.style.top = ((ph - h) / 2) + 'in';
+      env.prepend(div('outline'));
+      const cap = div('caption');
+      cap.textContent = `Test sheet · ${sizeName()} · ${fmt(w)} × ${fmt(h)} in · lay an envelope over the dashed outline`;
+      sheet.append(cap);
+    } else {
+      env.style.left = '0';
+      env.style.top = '0';
+      env.style.transform = transforms[rot];
+    }
+    sheet.append(env);
+    root.append(sheet);
+  }
+  // Make sure every logo copy is decoded, or the first pages can print blank where it goes.
+  await Promise.all([...root.querySelectorAll('img')].map(i => i.decode().catch(() => {})));
+  setTimeout(() => window.print(), 50);
+}
+window.addEventListener('afterprint', () => $('#printRoot').replaceChildren());
+
+// ---- wire up ----
+$('#size').innerHTML = SIZES.map(s =>
+  `<option value="${s.key}">${s.name}${s.w ? ` — ${fmt(s.w)} × ${fmt(s.h)} in` : ''}</option>`).join('');
+$('#font').innerHTML = FONTS.map(([n, css]) => `<option value='${css}' style='font-family:${css}'>${n}</option>`).join('');
+
+document.querySelectorAll('[data-key]').forEach(el => {
+  const k = el.dataset.key;
+  if (el.type === 'checkbox') el.checked = !!state[k];
+  else el.value = state[k];
+  el.addEventListener('input', () => {
+    if (el.type === 'checkbox') state[k] = el.checked;
+    else if (el.type === 'number') { if (el.value === '' || isNaN(+el.value)) return; state[k] = +el.value; }
+    else state[k] = el.value;
+    save();
+    render();
+  });
+});
+
+$('#logoPick').onclick = $('#logoReplace').onclick = () => $('#logoFile').click();
+$('#logoFile').onchange = e => { loadLogo(e.target.files[0]); e.target.value = ''; };
+$('#logoRemove').onclick = removeLogo;
+$('#importBtn').onclick = () => $('#importFile').click();
+$('#importFile').onchange = e => { importFile(e.target.files[0]); e.target.value = ''; };
+$('#clearBtn').onclick = () => {
+  if (list.length && !confirm('Clear the address list?')) return;
+  state.recipients = ''; state.idx = 0; $('#recipients').value = ''; $('#importNote').textContent = '';
+  save(); render();
+};
+const rcpBox = $('#recipients');
+rcpBox.addEventListener('dragover', e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); rcpBox.classList.add('dropping'); } });
+rcpBox.addEventListener('dragleave', () => rcpBox.classList.remove('dropping'));
+rcpBox.addEventListener('drop', e => {
+  if (!e.dataTransfer.files.length) return;
+  e.preventDefault();
+  rcpBox.classList.remove('dropping');
+  importFile(e.dataTransfer.files[0]);
+});
+const stageEl = $('#stage');
+stageEl.addEventListener('dragover', e => { e.preventDefault(); stageEl.classList.add('dropping'); });
+stageEl.addEventListener('dragleave', () => stageEl.classList.remove('dropping'));
+stageEl.addEventListener('drop', e => {
+  e.preventDefault();
+  stageEl.classList.remove('dropping');
+  loadLogo(e.dataTransfer.files[0]);
+});
+
+for (const [id, which, axis] of [['rcpX','rcp','x'], ['rcpY','rcp','y'], ['retX','ret','x'], ['retY','ret','y'], ['logoX','logo','x'], ['logoY','logo','y']]) {
+  document.getElementById(id).addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (isNaN(v)) return;
+    getPos()[which][axis] = round2(v);
+    save();
+    renderPreview();
+  });
+}
+
+$('#prev').onclick = () => { state.idx--; save(); render(); };
+$('#next').onclick = () => { state.idx++; save(); render(); };
+$('#reset').onclick = () => { delete state.positions[posKey()]; save(); render(); };
+$('#printAll').onclick = () => doPrint('all');
+$('#printOne').onclick = () => doPrint('one');
+$('#printTest').onclick = () => doPrint('test');
+
+let rt;
+window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderPreview, 100); });
+render();
+</script>
+</body>
+</html>
