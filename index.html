@@ -68,6 +68,8 @@ button{font:inherit;border:1px solid var(--line);background:var(--panel);color:v
 button:hover{border-color:var(--accent)}
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 button:disabled{opacity:.45;cursor:default}
+button.danger{color:var(--warn)}
+button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
 .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .toolbar .spacer{flex:1}
 .nav{display:flex;align-items:center;gap:6px}
@@ -196,6 +198,12 @@ button:disabled{opacity:.45;cursor:default}
         <option value="270">90° counter-clockwise</option>
       </select>
       <p class="hint">Negative nudge moves left / up. If an envelope comes out sideways or upside down, try a rotation.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Start over</h2>
+      <button id="resetAll" class="danger">Reset everything</button>
+      <p class="hint">Clears your addresses, return address and logo, and puts every setting, placement and printer adjustment back to its default.</p>
     </section>
   </div>
 
@@ -804,6 +812,11 @@ document.querySelectorAll('[data-key]').forEach(el => {
 $('#logoPick').onclick = $('#logoReplace').onclick = () => $('#logoFile').click();
 $('#logoFile').onchange = e => { loadLogo(e.target.files[0]); e.target.value = ''; };
 $('#logoRemove').onclick = removeLogo;
+$('#resetAll').onclick = () => {
+  if (!confirm('Reset everything?\n\nThis clears your addresses, return address and logo, and puts all settings and printer adjustments back to their defaults. It can’t be undone.')) return;
+  try { localStorage.removeItem(KEY); } catch {}
+  location.reload();   // a fresh load is the one path guaranteed to match a first visit
+};
 $('#importBtn').onclick = () => $('#importFile').click();
 $('#importFile').onchange = e => { importFile(e.target.files[0]); e.target.value = ''; };
 $('#clearBtn').onclick = () => {
