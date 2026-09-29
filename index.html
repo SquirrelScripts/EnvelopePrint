@@ -58,6 +58,22 @@ header span{color:var(--muted)}
 header .privacy{margin-left:auto;font-size:13px}
 @media (max-width:860px){ header .privacy{margin-left:0} }
 .btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+/* Compact icon toolbar under the address box, with quick tooltips (title tooltips are slow). */
+.icon-row{display:flex;align-items:center;gap:6px;margin-top:8px}
+.tool{display:inline-grid;place-items:center;width:36px;height:34px;padding:0;border-radius:8px;color:var(--muted)}
+.tool svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tool:hover,.tool:focus-visible{color:var(--accent);border-color:var(--accent)}
+.danger-tool:hover,.danger-tool:focus-visible{color:var(--warn);border-color:var(--warn);background:var(--warn-bg)}
+.icon-sep{flex:1}
+.tip{position:relative}
+.tip::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 7px);transform:translate(-50%,4px);
+  padding:4px 9px;border-radius:6px;background:var(--toast-bg);color:var(--toast-ink);font:500 12px/1.4 "Segoe UI",system-ui,sans-serif;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s ease,transform .12s ease;z-index:20}
+.tip:hover::after,.tip:focus-visible::after{opacity:1;transform:translate(-50%,0)}
+.tip:first-child::after{left:0;transform:translate(0,4px)}
+.tip:first-child:hover::after,.tip:first-child:focus-visible::after{transform:none}
+.tip:last-child::after{left:auto;right:0;transform:translate(0,4px)}
+.tip:last-child:hover::after,.tip:last-child:focus-visible::after{transform:none}
 textarea.dropping{outline:2px dashed var(--accent);outline-offset:-1px}
 .guide ol{padding-left:20px;margin:0;font-size:13px}
 .guide li{margin:5px 0}
@@ -178,7 +194,8 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
 @media (max-width:600px){
   .printbar .long,.pb-status{display:none}
   .printbar .short{display:inline}
-  .printbar button{flex:1}
+  .printbar button{flex:1;padding:7px 4px;white-space:nowrap}
+  .printbar #printAll{flex:1.6}
 }
 
 /* Envelope strip: every envelope in the batch, click to jump. */
@@ -283,14 +300,19 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
       <summary><h2>Recipients</h2><span class="meta"></span></summary>
       <div class="body">
       <textarea id="recipients" data-key="recipients" rows="11" placeholder="Jane Doe&#10;123 Main Street&#10;Springfield, IL 62701&#10;&#10;John Smith&#10;456 Oak Avenue, Apt 2&#10;Riverside, CA 92501"></textarea>
-      <div class="btn-row">
-        <button id="importBtn" title="Import a spreadsheet saved as CSV">Import CSV…</button>
-        <button id="templateBtn" title="A ready-made spreadsheet with the right columns">Get template</button>
-        <button id="tidyBtn" title="Fix capitals, spacing and postal abbreviations, and drop exact duplicates">✨ Tidy up</button>
-        <button id="clearBtn">Clear</button>
+      <div class="icon-row" role="toolbar" aria-label="Address list tools">
+        <button id="importBtn" class="tool tip" data-tip="Import a spreadsheet (CSV)" aria-label="Import a spreadsheet (CSV)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></button>
+        <button id="templateBtn" class="tool tip" data-tip="Get a spreadsheet template" aria-label="Get a spreadsheet template">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h8M12 13v4"/></svg></button>
+        <button id="tidyBtn" class="tool tip" data-tip="Tidy up: capitals, abbreviations, duplicates" aria-label="Tidy up the list">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3l1.9 4.6L17.5 9.5l-4.6 1.9L11 16l-1.9-4.6L4.5 9.5l4.6-1.9zM18.5 14l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg></button>
+        <span class="icon-sep" aria-hidden="true"></span>
+        <button id="clearBtn" class="tool tip danger-tool" data-tip="Clear the list" aria-label="Clear the list">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg></button>
       </div>
       <input type="file" id="importFile" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" hidden>
-      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. Columns named Name, Address, City, State and ZIP are recognized and put in the right order. Starting a list from scratch? <b>Get template</b> gives you a spreadsheet with the columns already set up.</p>
+      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. Columns named Name, Address, City, State and ZIP are recognized and put in the right order. The buttons above: import a CSV, get a ready-made spreadsheet template, ✨ tidy up the list, or clear it. Hover one to see what it does.</p>
       </div>
     </details>
 
@@ -437,7 +459,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   <h2>Questions</h2>
   <details>
     <summary>How do I print envelopes from an Excel or Google Sheets list?</summary>
-    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use <i>Import CSV</i>. Starting from nothing? <i>Get template</i> gives you a spreadsheet with the columns already named: fill in one address per row, save it as CSV, and import it. Its two example rows are skipped automatically. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero in the spreadsheet (2134 instead of 02134) are fixed automatically.</p>
+    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use the import button (the up-arrow under the address box). Starting from nothing? The template button next to it gives you a spreadsheet with the columns already named: fill in one address per row, save it as CSV, and import it. Its two example rows are skipped automatically. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero in the spreadsheet (2134 instead of 02134) are fixed automatically.</p>
   </details>
   <details>
     <summary>Why is the address printing in the wrong spot?</summary>
@@ -467,7 +489,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   </details>
   <details>
     <summary>My list is messy. Can it clean it up?</summary>
-    <p><i>✨ Tidy up</i> fixes spacing and all-lowercase names, turns "Street" into "St", "Apartment" into "Apt" and full state names into their two-letter codes, puts the comma in "City, ST ZIP", and removes exact duplicates. It keeps ALL-CAPS lines as they are, and there's an Undo if you don't like the result.</p>
+    <p>The ✨ Tidy up button under the address box fixes spacing and all-lowercase names, turns "Street" into "St", "Apartment" into "Apt" and full state names into their two-letter codes, puts the comma in "City, ST ZIP", and removes exact duplicates. It keeps ALL-CAPS lines as they are, and there's an Undo if you don't like the result.</p>
   </details>
   <details>
     <summary>Which browser should I use?</summary>
@@ -481,8 +503,9 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   </div>
   <div class="printbar">
     <span class="pb-status" id="pbStatus"></span>
-    <button id="printTest" title="Prints the outline on regular paper so you can check the layout"><span class="long">Test on plain paper</span><span class="short">Test sheet</span></button>
-    <button id="printOne">Print this one</button>
+    <button id="printTest" title="Prints the outline on regular paper so you can check the layout"><span class="long">Test on plain paper</span><span class="short">Test</span></button>
+    <button id="savePdf" title="Download every envelope as one PDF, to print later or from another computer. Uses your printer adjustments."><span class="long">Save PDF</span><span class="short">PDF</span></button>
+    <button id="printOne"><span class="long">Print this one</span><span class="short">This one</span></button>
     <button class="primary" id="printAll">Print all</button>
   </div>
   </div>
@@ -499,24 +522,34 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
 <div id="printRoot"></div>
 
 <script>
+// Keys are stored in saved settings, so existing ones never change; new sizes get new keys.
 const SIZES = [
-  { key:'10',      name:'#10 (business)',        w:9.5,    h:4.125 },
-  { key:'9',       name:'#9',                    w:8.875,  h:3.875 },
-  { key:'6.75',    name:'#6¾ (personal)',        w:6.5,    h:3.625 },
-  { key:'monarch', name:'Monarch (#7¾)',         w:7.5,    h:3.875 },
-  { key:'11',      name:'#11',                   w:10.375, h:4.5 },
-  { key:'a2',      name:'A2 (card)',             w:5.75,   h:4.375 },
-  { key:'a6',      name:'A6 (card)',             w:6.5,    h:4.75 },
-  { key:'a7',      name:'A7 (5×7 card)',         w:7.25,   h:5.25 },
-  { key:'a9',      name:'A9',                    w:8.75,   h:5.75 },
-  { key:'6x9',     name:'6 × 9 booklet',         w:9,      h:6 },
-  { key:'9x12',    name:'9 × 12 catalog',        w:12,     h:9 },
-  { key:'10x13',   name:'10 × 13 catalog',       w:13,     h:10 },
-  { key:'dl',      name:'DL (110 × 220 mm)',     w:8.661,  h:4.331 },
-  { key:'c6',      name:'C6 (114 × 162 mm)',     w:6.378,  h:4.488 },
-  { key:'c5',      name:'C5 (162 × 229 mm)',     w:9.016,  h:6.378 },
-  { key:'c4',      name:'C4 (229 × 324 mm)',     w:12.756, h:9.016 },
-  { key:'custom',  name:'Custom size…' },
+  { key:'10',      name:'#10 (business)',        w:9.5,    h:4.125, group:'Business & personal' },
+  { key:'9',       name:'#9 (reply)',            w:8.875,  h:3.875, group:'Business & personal' },
+  { key:'6.25',    name:'#6¼',                   w:6,      h:3.5,   group:'Business & personal' },
+  { key:'6.75',    name:'#6¾ (personal)',        w:6.5,    h:3.625, group:'Business & personal' },
+  { key:'7',       name:'#7',                    w:6.75,   h:3.75,  group:'Business & personal' },
+  { key:'monarch', name:'Monarch (#7¾)',         w:7.5,    h:3.875, group:'Business & personal' },
+  { key:'8.625',   name:'#8⅝ (check)',           w:8.625,  h:3.625, group:'Business & personal' },
+  { key:'11',      name:'#11',                   w:10.375, h:4.5,   group:'Business & personal' },
+  { key:'12',      name:'#12',                   w:11,     h:4.75,  group:'Business & personal' },
+  { key:'14',      name:'#14 (legal)',           w:11.5,   h:5,     group:'Business & personal' },
+  { key:'a1',      name:'A1 (small notes)',      w:5.125,  h:3.625, group:'Cards & invitations' },
+  { key:'a2',      name:'A2 (RSVP / small card)', w:5.75,  h:4.375, group:'Cards & invitations' },
+  { key:'a4inv',   name:'A4 invitation',         w:6.25,   h:4.25,  group:'Cards & invitations' },
+  { key:'a6',      name:'A6 (thank-you)',        w:6.5,    h:4.75,  group:'Cards & invitations' },
+  { key:'a7',      name:'A7 (5×7 invitation)',   w:7.25,   h:5.25,  group:'Cards & invitations' },
+  { key:'a8',      name:'A8',                    w:8.125,  h:5.5,   group:'Cards & invitations' },
+  { key:'a9',      name:'A9',                    w:8.75,   h:5.75,  group:'Cards & invitations' },
+  { key:'a10',     name:'A10',                   w:9.5,    h:6,     group:'Cards & invitations' },
+  { key:'6x9',     name:'6 × 9 booklet',         w:9,      h:6,     group:'Catalog & booklet' },
+  { key:'9x12',    name:'9 × 12 catalog',        w:12,     h:9,     group:'Catalog & booklet' },
+  { key:'10x13',   name:'10 × 13 catalog',       w:13,     h:10,    group:'Catalog & booklet' },
+  { key:'dl',      name:'DL (110 × 220 mm)',     w:8.661,  h:4.331, group:'International' },
+  { key:'c6',      name:'C6 (114 × 162 mm)',     w:6.378,  h:4.488, group:'International' },
+  { key:'c5',      name:'C5 (162 × 229 mm)',     w:9.016,  h:6.378, group:'International' },
+  { key:'c4',      name:'C4 (229 × 324 mm)',     w:12.756, h:9.016, group:'International' },
+  { key:'custom',  name:'Custom size…',                             group:'Other' },
 ];
 // [menu name, CSS font-family, menu group]. The Script and Elegant faces load from Google Fonts.
 const FONTS = [
@@ -1030,6 +1063,7 @@ function render(){
   currentLines = list[state.idx] || EMPTY;
   $('#printAll').textContent = list.length ? `Print all (${list.length})` : 'Print all';
   $('#printAll').disabled = $('#printOne').disabled = !list.length;
+  if (!pdfBusy) $('#savePdf').disabled = !list.length;
   $('#customRow').hidden = state.size !== 'custom';
   $('#logoEmpty').hidden = !!state.logo;
   $('#logoSet').hidden = $('#logoPosX').hidden = $('#logoPosY').hidden = !state.logo;
@@ -1342,6 +1376,135 @@ async function doPrint(mode){
   setTimeout(() => window.print(), 50);
 }
 
+// ---- Save as PDF ----
+// Each envelope is drawn onto a canvas at print resolution, using the same positions, fonts,
+// logo, flourish, nudge and rotation as printing, then packed into a PDF by the small writer
+// below. Everything happens in the browser; nothing is uploaded.
+
+const loadImage = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+
+async function drawEnvelopeCanvas(canvas, lines, dpi, assets){
+  const { w, h } = dims();
+  const rot = +state.rotate || 0;
+  const [pw, ph] = rot % 180 ? [h, w] : [w, h];
+  canvas.width = Math.round(pw * dpi);
+  canvas.height = Math.round(ph * dpi);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Same rotations as the print transforms, in device pixels.
+  if (rot === 90)  { ctx.translate(h * dpi, 0); ctx.rotate(Math.PI / 2); }
+  if (rot === 180) { ctx.translate(w * dpi, h * dpi); ctx.rotate(Math.PI); }
+  if (rot === 270) { ctx.translate(0, w * dpi); ctx.rotate(-Math.PI / 2); }
+  const pos = getPos();
+  const nx = +state.nudgeX || 0, ny = +state.nudgeY || 0;
+  const X = v => (v + nx) * dpi, Y = v => (v + ny) * dpi;
+
+  if (assets.logo) {
+    ctx.filter = state.logoGray ? 'grayscale(1)' : 'none';
+    ctx.drawImage(assets.logo, X(pos.logo.x), Y(pos.logo.y), (+state.logoW || 1) * dpi, logoH() * dpi);
+    ctx.filter = 'none';
+  }
+  if (assets.deco) ctx.drawImage(assets.deco, X(pos.deco.x), Y(pos.deco.y), (+state.decoW || 1) * dpi, decoH() * dpi);
+
+  // Text laid out the way CSS does it: line-height 1.2, glyphs centred in each line box.
+  const block = (text, p, pt) => {
+    const px = pt / 72 * dpi;
+    ctx.font = `${px}px ${state.font}`;
+    ctx.fillStyle = '#000';
+    ctx.textBaseline = 'alphabetic';
+    const m = ctx.measureText('Hg');
+    const asc = m.fontBoundingBoxAscent ?? px * .8, desc = m.fontBoundingBoxDescent ?? px * .2;
+    const lh = px * 1.2;
+    text.split('\n').forEach((line, i) => {
+      if (state.caps) line = line.toUpperCase();
+      ctx.fillText(line, X(p.x), Y(p.y) + i * lh + (lh - asc - desc) / 2 + asc);
+    });
+  };
+  if (state.printReturn) {
+    const ret = (state.returnText || '').split('\n').map(s => s.trim()).filter(Boolean).join('\n');
+    if (ret) block(ret, pos.ret, +state.retPt || 10);
+  }
+  block(lines.join('\n'), pos.rcp, +state.rcpPt || 12);
+  return { pw, ph };
+}
+
+// Minimal PDF: one full-page JPEG per page. Offsets are byte counts, so everything is bytes.
+function buildPDF(pages){
+  const enc = new TextEncoder();
+  const chunks = [], offsets = [];
+  let offset = 0;
+  const push = c => { const b = typeof c === 'string' ? enc.encode(c) : c; chunks.push(b); offset += b.length; };
+  const obj = (num, write) => { offsets[num] = offset; push(`${num} 0 obj\n`); write(); push('\nendobj\n'); };
+  push('%PDF-1.4\n%âãÏÓ\n');   // the high bytes mark the file as binary
+  obj(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => push(`<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + 3 * i} 0 R`).join(' ')}] /Count ${pages.length} >>`));
+  pages.forEach((p, i) => {
+    const P = 3 + 3 * i, C = P + 1, I = P + 2;
+    const W = n1(p.pw * 72), H = n1(p.ph * 72);
+    obj(P, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im0 ${I} 0 R >> >> /Contents ${C} 0 R >>`));
+    const draw = `q ${W} 0 0 ${H} 0 0 cm /Im0 Do Q`;
+    obj(C, () => push(`<< /Length ${draw.length} >>\nstream\n${draw}\nendstream`));
+    obj(I, () => {
+      push(`<< /Type /XObject /Subtype /Image /Width ${p.pxW} /Height ${p.pxH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.jpeg.length} >>\nstream\n`);
+      push(p.jpeg);
+      push('\nendstream');
+    });
+  });
+  const xref = offset, size = 3 + 3 * pages.length;
+  push(`xref\n0 ${size}\n0000000000 65535 f \n` + offsets.slice(1).map(o => String(o).padStart(10, '0') + ' 00000 n \n').join(''));
+  push(`trailer\n<< /Size ${size} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(chunks, { type:'application/pdf' });
+}
+
+let pdfBusy = false;
+async function makePDF(dpi = 300){
+  if (!list.length) return null;
+  try { await document.fonts.load(`16px ${state.font}`); await document.fonts.ready; } catch {}
+  const { w } = dims();
+  const assets = {
+    logo: state.logo ? await loadImage(state.logo.src) : null,
+    deco: DECOS[state.deco] ? await loadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+      decoSVG(state.deco).replace('<svg ', `<svg width="${Math.round((+state.decoW || 1) * dpi)}" height="${Math.round(decoH() * dpi)}" `))) : null,
+  };
+  const canvas = document.createElement('canvas');
+  const pages = [];
+  for (let i = 0; i < list.length; i++) {
+    const { pw, ph } = await drawEnvelopeCanvas(canvas, list[i], dpi, assets);
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
+    pages.push({ pw, ph, pxW: canvas.width, pxH: canvas.height, jpeg: new Uint8Array(await blob.arrayBuffer()) });
+    if (list.length > 3) $('#savePdf').firstElementChild.textContent = `Saving ${Math.round((i + 1) / list.length * 100)}%`;
+  }
+  return buildPDF(pages);
+}
+
+async function savePDF(){
+  if (pdfBusy || !list.length) return;
+  pdfBusy = true;
+  const btn = $('#savePdf'), label = btn.firstElementChild.textContent;
+  btn.disabled = true;
+  try {
+    const pdf = await makePDF();
+    const url = URL.createObjectURL(pdf);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `envelopes-${state.size === 'custom' ? 'custom' : state.size}-${list.length}.pdf`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast(`Saved ${plural(list.length, 'envelope')} as a PDF (${(pdf.size / 1048576).toFixed(1)} MB). Print it at 100% / Actual size.`, { ms:6000 });
+  } catch (err) {
+    console.error(err);
+    toast('Couldn’t build the PDF. Try Print instead, and choose “Save as PDF” in the print dialog.', { warn:true, ms:7000 });
+  } finally {
+    btn.firstElementChild.textContent = label;
+    btn.disabled = !list.length;
+    pdfBusy = false;
+  }
+}
+
 // After the print dialog closes: a little flock of envelopes flutters up from the Print button.
 function sendOff(n){
   toast(`${plural(n, 'envelope')} off to the printer 🎉`);
@@ -1432,8 +1595,10 @@ window.addEventListener('afterprint', () => {
 });
 
 // ---- wire up ----
-$('#size').innerHTML = SIZES.map(s =>
-  `<option value="${s.key}">${s.name}${s.w ? ` — ${fmt(s.w)} × ${fmt(s.h)} in` : ''}</option>`).join('');
+$('#size').innerHTML = [...new Set(SIZES.map(s => s.group))].map(g =>
+  `<optgroup label="${g}">` + SIZES.filter(s => s.group === g).map(s =>
+    `<option value="${s.key}">${s.name}${s.w ? ` — ${fmt(s.w)} × ${fmt(s.h)} in` : ''}</option>`).join('') + '</optgroup>'
+).join('');
 $('#font').innerHTML = [...new Set(FONTS.map(f => f[2]))].map(g =>
   `<optgroup label="${g}">` + FONTS.filter(f => f[2] === g).map(([n, css]) => `<option value='${css}' style='font-family:${css}'>${n}</option>`).join('') + '</optgroup>'
 ).join('');
@@ -1531,6 +1696,7 @@ $('#reset').onclick = () => { delete state.positions[posKey()]; save(); render()
 $('#printAll').onclick = () => doPrint('all');
 $('#printOne').onclick = () => doPrint('one');
 $('#printTest').onclick = () => doPrint('test');
+$('#savePdf').onclick = savePDF;
 $('#printAll').title = `Print every envelope (${MODP})`;
 document.querySelectorAll('.modp').forEach(el => { el.textContent = MODP; });
 

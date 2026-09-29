@@ -4,17 +4,19 @@
 
 **Use it → [squirrelscripts.github.io/EnvelopePrint](https://squirrelscripts.github.io/EnvelopePrint/)**
 
-One HTML file. No install, no signup, and your addresses never leave your browser. (The hosted page counts anonymous visits with GoatCounter, with no cookies; a downloaded copy counts nothing.)
+One HTML file. No install, no signup, and your addresses never leave your browser. (The hosted page loads its fonts from Google Fonts and counts anonymous visits with GoatCounter, with no cookies; neither sees your addresses.)
 
 ## What it does
 
-- **Addresses in:** type or paste them with a blank line between each, paste cells straight from Excel or Google Sheets, or import a CSV. Column headers like First Name, Address, City, State and ZIP are recognized, including Google Contacts and Outlook exports. ZIPs that lost their leading zero get it back.
-- **Any envelope:** #10, #9, #6¾, Monarch, #11, A2, A6, A7, A9, 6×9, 9×12, 10×13, DL, C4, C5, C6, or a custom size.
-- **Drag to place:** move the address, return address and logo on a live preview, or type exact inches. Placement is remembered for each size.
-- **Logo:** drop in a PNG, JPG or SVG, drag it, resize it from the corner, and optionally print it in black & white.
-- **Catches problems first:** warns you if any address in the list runs off the edge, not just the one on screen.
+- **Addresses in:** type or paste them with a blank line between each, paste cells straight from Excel or Google Sheets, or import a CSV. Column headers like First Name, Address, City, State and ZIP are recognized, including Google Contacts and Outlook exports. ZIPs that lost their leading zero get it back. A ready-made spreadsheet template is one click away.
+- **Tidy up:** fixes capitals and spacing, applies postal abbreviations (Street → St, Apartment → Apt), turns full state names into codes, and removes duplicates, with Undo.
+- **Any envelope:** 25 standard sizes across business (#6¼ to #14), cards and invitations (A1 to A10), catalog, and international (DL, C4–C6), or a custom size.
+- **Drag to place:** move the address, return address, logo and decoration on a live preview, or type exact inches. Placement is remembered for each size.
+- **Looks the part:** everyday, elegant and script fonts for invitations, a logo (drag, resize, black & white), and seasonal flourishes like holly, snowflakes, hearts and flowers.
+- **Catches problems first:** warns you if any address in the list runs off the edge, not just the one on screen, and shows the whole batch as thumbnails.
 - **Test before you waste envelopes:** *Test on plain paper* prints the outline on a regular sheet so you can hold an envelope over it.
 - **Printer adjustments:** nudge and rotate to match the way your printer feeds envelopes. Set it once and it's saved.
+- **Print or save:** print the batch (Ctrl+P works too), or *Save PDF* to print later or from another computer.
 
 ## Printing tips
 
