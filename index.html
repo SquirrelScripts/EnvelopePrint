@@ -89,7 +89,13 @@ textarea.dropping{outline:2px dashed var(--accent);outline-offset:-1px}
 /* Slim strip anchored at the bottom of the window, under the print bar (desktop).
    On phones it simply ends the page, above the fixed print bar. */
 .site-foot{flex:none;border-top:1px solid var(--line);padding:7px 20px;display:flex;gap:18px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:12px;background:var(--bg)}
-.site-foot a{color:var(--accent)}
+.site-foot a,.link-btn{color:var(--accent)}
+.link-btn{border:0;background:none;padding:0;font:inherit;text-decoration:underline;cursor:pointer}
+.news h4{margin:14px 0 4px;font-size:14px}
+.news h4:first-child{margin-top:0}
+.news h4 span{color:var(--muted);font-weight:400;font-size:12px}
+.news ul{margin:0;padding-left:18px;font-size:13px}
+.news li{margin:3px 0}
 main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;padding:16px;align-items:start}
 @media (max-width:860px){main{grid-template-columns:minmax(0,1fr)}}   /* minmax: a wide strip scrolls instead of widening the page */
 /* Desktop: an app shell. The header stays put and each column scrolls on its own inside
@@ -704,6 +710,7 @@ dialog label.inline{margin:8px 0}
   <span>Made by <a href="https://squirrelscripts.github.io/">SquirrelScripts</a> 🐿️</span>
   <a href="https://squirrelscripts.github.io/">More free tools →</a>
   <a href="https://buymeacoffee.com/eblank" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+  <button type="button" class="link-btn" id="whatsNewBtn">What’s new</button>
 </footer>
 
 <dialog id="dlg">
@@ -823,6 +830,25 @@ const paper = () => PAPERS.find(p => p.key === state.paper) || PAPERS[0];
 // Shown in the address spot until there's a real address. Test sheets print it as-is.
 const EMPTY = ['Recipient name', 'Street address', 'City, ST ZIP'];
 const KEY = 'envelopePrint.v1';
+
+// Release notes. When a change ships that people would notice, add an entry at the top and
+// bump APP_VERSION to match; returning visitors get a one-time "Updated" note.
+const APP_VERSION = '2026.09.29';
+const WHATS_NEW = [
+  { v:'2026.09.29', title:'More flourishes & a chatty squirrel', items:[
+    '35 flourishes under Decoration, in groups, including a Faith set: cross, dove, chalice & host, Sacred Heart, rosary, Marian M & cross, Easter lilies, Advent wreath, Star of Bethlehem and more.',
+    'New Christmas, Easter, autumn and celebration designs too: tree, ornaments, tulips, eggs, pumpkin, wedding rings and bells, balloons.',
+    '“Match ink colour” prints a flourish in one colour, like a gold cross or chalice, for a more formal look.',
+    'The squirrel has a lot more to say when everything fits.',
+    'This note: you’ll see one whenever the app has been updated. “What’s new” at the bottom shows it again.',
+  ] },
+  { v:'2026.09.28', title:'Labels, postcards and card lists', items:[
+    'Print on envelopes, postcards or Avery label sheets, including return-address labels.',
+    'Saved lists with a card tracker: tick who you sent to and who sent you one, and start next year’s list from this year’s.',
+    'Wedding touches: centred addresses, the return address on the back flap, and merging people who share an address.',
+    'Install it as an app that works offline, and back up everything to a file.',
+  ] },
+];
 const MODP = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘P' : 'Ctrl+P';
 
 // ============================================================================
@@ -844,8 +870,11 @@ const DEFAULTS = {
   // which settings sections are open; the set-once ones start closed
   open:{ envelope:true, recipients:true, return:true, logo:false, deco:false, text:false, printer:false, reset:false, tracker:false },
 };
-const state = Object.assign({}, DEFAULTS, load());
+const saved = load();
+const returningVisitor = Object.keys(saved).length > 0;   // anything saved means they've used it before
+const state = Object.assign({}, DEFAULTS, saved);
 state.open = Object.assign({}, DEFAULTS.open, state.open);
+if (!returningVisitor) state.seenVersion = APP_VERSION;    // first visit: nothing to announce
 // Saved lists arrived later: fold an older single list into the first named one.
 if (!Array.isArray(state.lists) || !state.lists.length) {
   state.lists = [{ id:uid(), name:'My list', text:state.recipients || '', marks:{} }];
@@ -908,11 +937,13 @@ function toast(msg, { warn = false, ms = 3200, action = null } = {}){
 }
 
 // A small modal form. Resolves to the form's values, or null if cancelled.
-function ask({ title, body, ok = 'OK' }){
+// cancel:false makes it a plain notice with just the OK button.
+function ask({ title, body, ok = 'OK', cancel = true }){
   const dlg = $('#dlg');
   $('#dlgTitle').textContent = title;
   $('#dlgBody').innerHTML = body;
   $('#dlgOk').textContent = ok;
+  $('#dlgForm button[value=cancel]').hidden = !cancel;
   dlg.returnValue = '';
   dlg.showModal();
   dlg.querySelector('#dlgBody input:not([type=radio]), #dlgBody select')?.select?.();
@@ -3078,9 +3109,30 @@ window.addEventListener('appinstalled', () => { $('#installBtn').hidden = true; 
 
 let rt;
 window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderPreview, 100); });
+// ---- "What's new" ----
+// Versions are dates written 2026.09.29.
+const fmtDate = v => new Date(v.replace(/\./g, '-') + 'T12:00:00').toLocaleDateString(undefined, { month:'long', day:'numeric', year:'numeric' });
+function showWhatsNew(entries = WHATS_NEW){
+  ask({ title:'What’s new', ok:'Nice!', cancel:false, body:'<div class="news">' + entries.map(e =>
+    `<h4>${esc(e.title)} <span>· ${fmtDate(e.v)}</span></h4><ul>${e.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('') + '</div>' });
+}
+$('#whatsNewBtn').onclick = () => showWhatsNew();
+
+// First launch after an update: a one-time note. Someone who's never seen a note gets just the
+// latest release, not the whole history.
+function announceUpdate(){
+  if (!returningVisitor || state.seenVersion === APP_VERSION) return;
+  const unseen = state.seenVersion ? WHATS_NEW.filter(e => e.v > state.seenVersion) : WHATS_NEW.slice(0, 1);
+  state.seenVersion = APP_VERSION;
+  save();
+  if (!unseen.length) return;
+  setTimeout(() => toast(`✨ Updated: ${unseen[0].title}`, { ms:10000, action:{ label:'What’s new', fn:() => showWhatsNew(unseen) } }), 900);
+}
+
 populateLists();
 applyUnits();
 render();
+announceUpdate();
 </script>
 </body>
 </html>
