@@ -486,21 +486,14 @@ dialog label.inline{margin:8px 0}
     <details class="panel sect" data-sect="deco">
       <summary><h2>Decoration</h2><span class="meta"></span></summary>
       <div class="body">
-      <label for="deco">Seasonal flourish</label>
-      <select id="deco" data-key="deco">
-        <option value="none">None</option>
-        <option value="holly">Holly · Christmas</option>
-        <option value="snow">Snowflakes · winter</option>
-        <option value="hearts">Hearts · Valentine's &amp; weddings</option>
-        <option value="stars">Stars · celebrations</option>
-        <option value="leaves">Leaves · autumn</option>
-        <option value="flowers">Flowers · spring</option>
-      </select>
+      <label for="deco">Flourish</label>
+      <select id="deco" data-key="deco"></select>
       <div id="decoSize" hidden>
         <label for="decoW">Width (<span class="u">in</span>)</label>
         <input id="decoW" data-key="decoW" data-len data-step-in="0.05" data-step-mm="1" type="number" min="0.3">
+        <label class="inline" style="margin-top:10px"><input type="checkbox" data-key="decoMono"> Match ink colour <span class="soft">(one colour, more formal)</span></label>
       </div>
-      <p class="hint">Printed in colour on envelopes and postcards. Drag it anywhere, or pull its corner to resize.</p>
+      <p class="hint">Faith symbols, holidays and celebrations. Printed in colour on envelopes and postcards, or in your ink colour. Drag it anywhere, or pull its corner to resize.</p>
       </div>
     </details>
 
@@ -677,7 +670,7 @@ dialog label.inline{margin:8px 0}
   </details>
   <details>
     <summary>Can I address wedding invitations or holiday cards?</summary>
-    <p>Yes. Pick a script font under <i>Text</i> (Great Vibes, Pinyon Script, Parisienne and others) at 16–20pt, set <i>Alignment</i> to <i>Centred</i>, and choose an ink colour. The merge button next to the address box turns guests who share an address into one envelope ("John and Ann Smith" or "The Smith Family"). Put the return address on the back flap, and add a flourish under <i>Decoration</i>. Envelope colour previews kraft, blush or navy stock.</p>
+    <p>Yes. Pick a script font under <i>Text</i> (Great Vibes, Pinyon Script, Parisienne and others) at 16–20pt, set <i>Alignment</i> to <i>Centred</i>, and choose an ink colour. The merge button next to the address box turns guests who share an address into one envelope ("John and Ann Smith" or "The Smith Family"). Put the return address on the back flap, and add a flourish under <i>Decoration</i>: there are faith symbols (cross, dove, chalice and host, Sacred Heart, rosary, Marian M, lilies and more) alongside holiday and celebration ones, in full colour or matched to your ink. Envelope colour previews kraft, blush or navy stock.</p>
   </details>
   <details>
     <summary>My list is messy. Can it clean it up?</summary>
@@ -844,7 +837,7 @@ const DEFAULTS = {
   align:'left', spacing:'1.2', nameBold:false, namePlus:0, ink:'black', paper:'white', units:'in',
   nudgeX:0, nudgeY:0, rotate:'0',
   logo:null, logoW:1, logoGray:false,
-  deco:'none', decoW:1,
+  deco:'none', decoW:1, decoMono:false,
   theme:'auto',
   lists:null, listId:null, skipSent:false, trackFilter:'all',
   positions:{}, idx:0,
@@ -996,21 +989,40 @@ const returnOnFront = () => state.printReturn && state.returnWhere !== 'back';
 const backMode = () => state.printReturn && state.returnWhere === 'back' && !isLabels();
 
 // ============================================================================
-// Seasonal flourishes: small vector drawings on a 120 x 60 canvas
+// Flourishes: small vector drawings on a 120 x 60 canvas, grouped for the menu
 // ============================================================================
 
 const DECO_RATIO = 0.5;
 const decoH = () => (+state.decoW || 1) * DECO_RATIO;
+const at = (extra = '') => extra ? ' ' + extra : '';
+const P = (d, fill, extra) => `<path d="${d}" fill="${fill}"${at(extra)}/>`;
+const C = (cx, cy, r, fill, extra) => `<circle cx="${n1(cx)}" cy="${n1(cy)}" r="${n1(r)}" fill="${fill}"${at(extra)}/>`;
+const E = (cx, cy, rx, ry, fill, extra) => `<ellipse cx="${n1(cx)}" cy="${n1(cy)}" rx="${n1(rx)}" ry="${n1(ry)}" fill="${fill}"${at(extra)}/>`;
+const R = (x, y, w, h, fill, extra) => `<rect x="${n1(x)}" y="${n1(y)}" width="${n1(w)}" height="${n1(h)}" fill="${fill}"${at(extra)}/>`;
+const Ln = (x1, y1, x2, y2, stroke, w) => `<line x1="${n1(x1)}" y1="${n1(y1)}" x2="${n1(x2)}" y2="${n1(y2)}" stroke="${stroke}" stroke-width="${w}" stroke-linecap="round"/>`;
+// Round caps and joins unless the caller sets its own (a repeated attribute makes the SVG invalid
+// as a standalone image, which is how the PDF draws it).
+const S = (d, stroke, w, extra = '') => `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${w}"` +
+  (/stroke-linecap/.test(extra) ? '' : ' stroke-linecap="round"') + (/stroke-linejoin/.test(extra) ? '' : ' stroke-linejoin="round"') + `${at(extra)}/>`;
+const G = (transform, inner) => `<g transform="${transform}">${inner}</g>`;
+const rays = (cx, cy, r1, r2, n, stroke, w, start = 0) => {
+  let s = '';
+  for (let i = 0; i < n; i++) { const a = start + i * 2 * Math.PI / n; s += Ln(cx + r1 * Math.cos(a), cy + r1 * Math.sin(a), cx + r2 * Math.cos(a), cy + r2 * Math.sin(a), stroke, w); }
+  return s;
+};
 const star = (cx, cy, r, fill) => {
   const pts = [];
-  for (let i = 0; i < 10; i++) {
-    const a = Math.PI / 5 * i - Math.PI / 2, rr = i % 2 ? r * 0.45 : r;
-    pts.push(n1(cx + rr * Math.cos(a)) + ',' + n1(cy + rr * Math.sin(a)));
-  }
+  for (let i = 0; i < 10; i++) { const a = Math.PI / 5 * i - Math.PI / 2, rr = i % 2 ? r * 0.45 : r; pts.push(n1(cx + rr * Math.cos(a)) + ',' + n1(cy + rr * Math.sin(a))); }
   return `<polygon points="${pts.join(' ')}" fill="${fill}"/>`;
 };
-const heart = (cx, cy, s, fill) =>
-  `<path transform="translate(${cx} ${cy}) scale(${s})" d="M0 7C-8-1-12-8-6-11C-2-13 0-9 0-7C0-9 2-13 6-11C12-8 8-1 0 7Z" fill="${fill}"/>`;
+// Four-point twinkle; long points up/down/left/right.
+const sparkle = (cx, cy, r, fill, thin = 0.22) => {
+  const pts = [];
+  for (let i = 0; i < 8; i++) { const a = Math.PI / 4 * i - Math.PI / 2, rr = i % 2 ? r * thin : r; pts.push(n1(cx + rr * Math.cos(a)) + ',' + n1(cy + rr * Math.sin(a))); }
+  return `<polygon points="${pts.join(' ')}" fill="${fill}"/>`;
+};
+const heart = (cx, cy, s, fill, extra) =>
+  `<path transform="translate(${n1(cx)} ${n1(cy)}) scale(${s})" d="M0 7C-8-1-12-8-6-11C-2-13 0-9 0-7C0-9 2-13 6-11C12-8 8-1 0 7Z" fill="${fill}"${at(extra)}/>`;
 const flake = (cx, cy, r, color) => {
   let s = '';
   for (let i = 0; i < 6; i++) {
@@ -1021,27 +1033,241 @@ const flake = (cx, cy, r, color) => {
   }
   return `<g stroke="${color}" stroke-width="${n1(r / 7)}" stroke-linecap="round">${s}</g>`;
 };
-const leaf = (cx, cy, r, rot, fill, vein) =>
-  `<g transform="translate(${cx} ${cy}) rotate(${rot})"><path d="M0 ${-r}C${n1(r * .75)} ${n1(-r * .4)} ${n1(r * .75)} ${n1(r * .4)} 0 ${r}C${n1(-r * .75)} ${n1(r * .4)} ${n1(-r * .75)} ${n1(-r * .4)} 0 ${-r}Z" fill="${fill}"/>` +
-  `<line x1="0" y1="${n1(-r * .8)}" x2="0" y2="${n1(r * 1.3)}" stroke="${vein}" stroke-width="${n1(r / 9)}" stroke-linecap="round"/></g>`;
+// A leaf pointing up from its centre, then rotated; width is a fraction of its length.
+const leaf = (cx, cy, r, rot, fill, vein, width = 0.75) =>
+  `<g transform="translate(${n1(cx)} ${n1(cy)}) rotate(${n1(rot)})"><path d="M0 ${n1(-r)}C${n1(r * width)} ${n1(-r * .4)} ${n1(r * width)} ${n1(r * .4)} 0 ${n1(r)}C${n1(-r * width)} ${n1(r * .4)} ${n1(-r * width)} ${n1(-r * .4)} 0 ${n1(-r)}Z" fill="${fill}"/>` +
+  (vein ? `<line x1="0" y1="${n1(-r * .8)}" x2="0" y2="${n1(r * 1.3)}" stroke="${vein}" stroke-width="${n1(Math.max(.5, r / 9))}" stroke-linecap="round"/>` : '') + `</g>`;
 const flower = (cx, cy, r, petal, mid) => {
   let s = '';
-  for (let i = 0; i < 5; i++) {
-    const a = Math.PI * 2 / 5 * i - Math.PI / 2;
-    s += `<circle cx="${n1(cx + r * .55 * Math.cos(a))}" cy="${n1(cy + r * .55 * Math.sin(a))}" r="${n1(r * .45)}" fill="${petal}"/>`;
-  }
-  return s + `<circle cx="${cx}" cy="${cy}" r="${n1(r * .3)}" fill="${mid}"/>`;
+  for (let i = 0; i < 5; i++) { const a = Math.PI * 2 / 5 * i - Math.PI / 2; s += C(cx + r * .55 * Math.cos(a), cy + r * .55 * Math.sin(a), r * .45, petal); }
+  return s + C(cx, cy, r * .3, mid);
 };
+// Latin cross: top at `top`, total height h, crossbar a quarter of the way down.
+const cross = (cx, top, h, fill, extra) => {
+  const t = h * 0.15, a = h * 0.62, y = top + h * 0.26, arm = (a - t) / 2, lower = h - (y - top) - t;
+  return `<path d="M${n1(cx - t / 2)} ${n1(top)}h${n1(t)}v${n1(y - top)}h${n1(arm)}v${n1(t)}h${n1(-arm)}v${n1(lower)}h${n1(-t)}v${n1(-lower)}h${n1(-arm)}v${n1(-t)}h${n1(arm)}z" fill="${fill}"${at(extra)}/>`;
+};
+const flame = (cx, cy, h, outer = '#f08a24', inner = '#ffd24a') =>
+  P(`M${n1(cx)} ${n1(cy)}C${n1(cx - h * .32)} ${n1(cy - h * .25)} ${n1(cx - h * .3)} ${n1(cy - h * .6)} ${n1(cx)} ${n1(cy - h)}C${n1(cx + h * .3)} ${n1(cy - h * .6)} ${n1(cx + h * .32)} ${n1(cy - h * .25)} ${n1(cx)} ${n1(cy)}Z`, outer) +
+  P(`M${n1(cx)} ${n1(cy - h * .08)}C${n1(cx - h * .16)} ${n1(cy - h * .25)} ${n1(cx - h * .14)} ${n1(cy - h * .5)} ${n1(cx)} ${n1(cy - h * .72)}C${n1(cx + h * .14)} ${n1(cy - h * .5)} ${n1(cx + h * .16)} ${n1(cy - h * .25)} ${n1(cx)} ${n1(cy - h * .08)}Z`, inner);
+const egg = (cx, cy, w, h, fill, extra) =>
+  P(`M${n1(cx)} ${n1(cy - h / 2)}C${n1(cx + w * .62)} ${n1(cy - h / 2)} ${n1(cx + w / 2)} ${n1(cy + h / 2)} ${n1(cx)} ${n1(cy + h / 2)}C${n1(cx - w / 2)} ${n1(cy + h / 2)} ${n1(cx - w * .62)} ${n1(cy - h / 2)} ${n1(cx)} ${n1(cy - h / 2)}Z`, fill, extra);
+const drop = (cx, cy, s, fill) => P(`M${n1(cx)} ${n1(cy - 5 * s)}C${n1(cx + 2 * s)} ${n1(cy - s)} ${n1(cx + 3 * s)} ${n1(cy + s)} ${n1(cx + 3 * s)} ${n1(cy + 2.5 * s)}A${n1(3 * s)} ${n1(3 * s)} 0 0 1 ${n1(cx - 3 * s)} ${n1(cy + 2.5 * s)}C${n1(cx - 3 * s)} ${n1(cy + s)} ${n1(cx - 2 * s)} ${n1(cy - s)} ${n1(cx)} ${n1(cy - 5 * s)}Z`, fill);
+
+const GOLD = '#d4a73a', GOLD_LT = '#e9c46a', GOLD_DK = '#b8862a';
+
 const DECOS = {
+  // ---- Faith ----
+  cross: () => rays(60, 21, 12, 27, 16, GOLD_LT, 1.6, Math.PI / 16) + cross(60, 5, 50, '#8b5a2b', `stroke="${GOLD_DK}" stroke-width=".8"`),
+  dove: () => {
+    const line = 'stroke="#8fb3d9" stroke-width="1.3" stroke-linejoin="round"';
+    return S('M27 32C23 37 20 41 16 46', '#5d7a2b', 1.2) + leaf(21.5, 37.5, 4, -40, '#7a9a3a', '', .45) + leaf(17.5, 43.5, 4, 20, '#7a9a3a', '', .45) + leaf(25, 36.5, 3.4, 65, '#7a9a3a', '', .45) +
+      // far wing, body with round head and fanned tail, near wing
+      P('M50 29C47 19 51 10 60 4C60 11 63 15 68 16C65 21 64 25 60 29Z', '#eef4fb', line) +
+      P('M30 30C30 25 34 22 39 22.5C44 23 46 26 48 28.5C56 30 65 30 73 28C80 26 88 22 97 15C96 22 93 28 88 32C94 33 99 37 102 42C94 40.5 87 40.5 81 41C70 45 55 45.5 45 41.5C38.5 39 33 36 30 33Z', '#ffffff', line) +
+      P('M53 30C51 19 56 9 67 2.5C66 9 68 13 74 14C70 19 71 23 77 24C71 28.5 64 31 57 31.5Z', '#ffffff', line) +
+      P('M30.4 29.6L24.5 31.3L30.4 32.9Z', '#e8a33d') + C(35.5, 27.2, 1.1, '#3a3a3a');
+  },
+  chalice: () =>
+    rays(60, 12, 9.5, 14, 14, GOLD_LT, 1.2) + C(60, 12, 7.5, '#fffaf0', `stroke="${GOLD}" stroke-width="1.2"`) + cross(60, 7.2, 9.6, GOLD) +
+    P('M45 20H75C75 31 69 36 60 36C51 36 45 31 45 20Z', GOLD) + E(60, 20, 15, 2.8, GOLD_LT) +
+    R(58.2, 36, 3.6, 7, GOLD_DK) + E(60, 43, 3.8, 2, GOLD) + P('M49 53C52 47 68 47 71 53Z', GOLD_DK) + E(60, 53, 11, 2.2, GOLD),
+  sacredHeart: () =>
+    rays(60, 34, 25, 30, 22, GOLD_LT, 1.1) +
+    flame(60, 18, 13) + flame(54, 19, 8) + flame(66, 19, 8) + cross(60, 0.5, 9, GOLD_DK) +
+    heart(60, 36, 2.05, '#c62828') +
+    S('M42 29C46 26 50 32 54 29C58 26 62 32 66 29C70 26 74 32 78 29', '#2e5e2e', 2.2) +
+    Ln(46, 27.5, 44.5, 25, '#2e5e2e', 1) + Ln(58, 27.5, 57, 25, '#2e5e2e', 1) + Ln(70, 27.5, 71.5, 25, '#2e5e2e', 1) + Ln(52, 31, 51, 33.5, '#2e5e2e', 1) + Ln(64, 31, 65, 33.5, '#2e5e2e', 1),
+  rosary: () => {
+    let s = '';
+    const cx = 47, cy = 24, rx = 30, ry = 16, skip = Math.PI / 4;
+    for (let i = 0; i < 40; i++) {
+      const a = i * 2 * Math.PI / 40;
+      if (Math.abs(((a - skip + Math.PI) % (2 * Math.PI)) - Math.PI) < 0.16) continue;
+      s += C(cx + rx * Math.cos(a), cy + ry * Math.sin(a), i % 10 === 0 ? 2.4 : 1.8, i % 10 === 0 ? '#2f5d9a' : '#4f7fc4');
+    }
+    const ax = cx + rx * Math.cos(skip), ay = cy + ry * Math.sin(skip);
+    s += S(`M${n1(ax)} ${n1(ay)}L92 44`, '#9aa7b8', .8);
+    s += C(76, 37.5, 2.4, '#2f5d9a') + C(81, 39.6, 1.8, '#4f7fc4') + C(85.5, 41.5, 1.8, '#4f7fc4');
+    s += E(ax, ay, 2.8, 3.4, GOLD, `stroke="${GOLD_DK}" stroke-width=".6"`);
+    s += cross(93.5, 40, 18, '#7b5a2f', `stroke="${GOLD_DK}" stroke-width=".6"`);
+    return s;
+  },
+  marian: () => {
+    let s = '';
+    for (let i = 0; i < 12; i++) {
+      if (i === 3) continue;   // the bottom spot is where the hearts go
+      const a = i * Math.PI / 6;
+      s += star(60 + 50 * Math.cos(a), 30 + 25 * Math.sin(a), 2.8, '#e0a526');
+    }
+    s += cross(60, 1, 15, '#2f5d9a') + Ln(47, 16.5, 73, 16.5, '#2f5d9a', 3);
+    s += S('M46 46V22L60 38L74 22V46', '#2f5d9a', 5, 'stroke-linecap="butt" stroke-linejoin="miter"');
+    s += heart(53.5, 51, .42, '#c62828') + heart(66.5, 51, .42, '#c62828');
+    return s;
+  },
+  ichthys: () => S('M32 30Q58 4 88 42M32 30Q58 56 88 18', '#2f5d8a', 3.4) + C(42, 27.5, 1.7, '#2f5d8a'),
+  shell: () =>
+    G('rotate(-24 50 36)',
+      P('M50 40C37 37 32 22 41 13C47 7 59 7 65 13C74 22 67 37 54 40Z', '#f6d2b0', 'stroke="#c98b5a" stroke-width="1.2" stroke-linejoin="round"') +
+      Ln(52, 39, 41, 17, '#d9a27a', .9) + Ln(52, 39, 47, 11, '#d9a27a', .9) + Ln(52, 39, 53, 9.5, '#d9a27a', .9) + Ln(52, 39, 59, 11, '#d9a27a', .9) + Ln(52, 39, 65, 16, '#d9a27a', .9) +
+      P('M47 40C49 45 55 45 57 40Z', '#e8b48c')) +
+    drop(78, 30, 1.1, '#5b9bd5') + drop(84, 40, 1.1, '#5b9bd5') + drop(78, 50, 1.1, '#5b9bd5'),
+  candle: () =>
+    C(60, 13, 12, '#fff3c4', 'opacity=".75"') + flame(60, 21, 13) + Ln(60, 21, 60, 24, '#444', 1) +
+    R(52, 24, 16, 29, '#fbf5e8', 'stroke="#d8c7a1" stroke-width="1"') + P('M52 27C54 27 55 32 56.5 31C57.5 30 57 27 58 26H52Z', '#efe4cc') +
+    cross(60, 30, 13, '#c62828') + E(60, 54, 15, 3.2, GOLD, `stroke="${GOLD_DK}" stroke-width=".7"`),
+  lilies: () => {
+    const lily = (x, y, rot, s) => G(`translate(${x} ${y}) rotate(${rot}) scale(${s})`,
+      P('M0 0C-3 -6 -10 -12 -11 -20C-7 -17 -4 -17 -2 -18C-1 -21 0 -24 0 -25C0 -24 1 -21 2 -18C4 -17 7 -17 11 -20C10 -12 3 -6 0 0Z', '#ffffff', 'stroke="#b9a24a" stroke-width=".9" stroke-linejoin="round"') +
+      Ln(0, -7, -2.2, -18.5, '#d4a017', .7) + Ln(0, -7, 2.2, -18.5, '#d4a017', .7) + C(-2.2, -18.8, 1.1, '#c9791a') + C(2.2, -18.8, 1.1, '#c9791a'));
+    return S('M50 58C50 48 48 40 46 33', '#4f7a2a', 1.6) + S('M68 58C68 48 70 41 73 35', '#4f7a2a', 1.6) +
+      leaf(42, 50, 9, -35, '#5f8f32', '', .3) + leaf(76, 51, 9, 38, '#5f8f32', '', .3) + leaf(58, 50, 8, 8, '#6b9a3a', '', .3) +
+      lily(46, 34, -20, 1.05) + lily(73, 36, 18, 1) + G('translate(60 40) rotate(-4) scale(.7)', P('M0 0C-3 -5 -5 -10 -4 -16C-2 -13 2 -13 4 -16C5 -10 3 -5 0 0Z', '#f7f3e3', 'stroke="#b9a24a" stroke-width=".9"')) + S('M59.5 40V58', '#4f7a2a', 1.3);
+  },
+  palm: () => {
+    let s = S('M16 55Q56 46 106 9', '#5a7d2a', 1.8);
+    for (let t = 0.1; t <= 0.96; t += 0.06) {
+      const x = (1 - t) ** 2 * 16 + 2 * (1 - t) * t * 56 + t * t * 106, y = (1 - t) ** 2 * 55 + 2 * (1 - t) * t * 46 + t * t * 9;
+      const dx = 2 * (1 - t) * 40 + 2 * t * 50, dy = 2 * (1 - t) * -9 + 2 * t * -37;
+      const th = Math.atan2(dy, dx), r = 9 * (1 - t * 0.55);
+      for (const side of [-1, 1]) {
+        const a = th + side * 0.95;
+        s += leaf(x + r * Math.cos(a), y + r * Math.sin(a), r, a * 180 / Math.PI + 90, side > 0 ? '#6b9a3a' : '#5f8f32', '', .22);
+      }
+    }
+    return s;
+  },
+  advent: () => {
+    const candle = (x, h, fill) => R(x - 3, 40 - h, 6, h, fill) + flame(x, 40 - h - 1, 8);
+    let s = candle(42, 20, '#6a3d9a') + candle(54, 24, '#6a3d9a') + candle(66, 24, '#e389b9') + candle(78, 20, '#6a3d9a');
+    s += E(60, 45, 31, 8, 'none', 'stroke="#2e7d32" stroke-width="7"');
+    for (let i = 0; i < 14; i++) {
+      const a = i * 2 * Math.PI / 14, x = 60 + 31 * Math.cos(a), y = 45 + 8 * Math.sin(a);
+      s += leaf(x, y, 4.5, a * 180 / Math.PI + (i % 2 ? 60 : -60), i % 2 ? '#388e3c' : '#1b5e20', '', .45);
+    }
+    return s + C(40, 49, 1.8, '#c62828') + C(62, 53, 1.8, '#c62828') + C(84, 48, 1.8, '#c62828');
+  },
+  bethlehem: () =>
+    P('M58 30L60 59L62 30Z', '#e9c46a') + sparkle(60, 24, 21, '#e0a526', .18) + sparkle(60, 24, 11, '#f5d57a', .25) +
+    sparkle(28, 15, 6, '#f0c14b') + sparkle(91, 12, 5, '#f0c14b') + sparkle(90, 42, 4, '#f0c14b') + sparkle(32, 44, 3.5, '#f0c14b'),
+  angel: () =>
+    P('M56 25C45 16 32 17 25 27C33 27 39 31 44 38C48 34 52 30 56 30Z', '#dbe8f7', 'stroke="#9fbbe0" stroke-width="1" stroke-linejoin="round"') +
+    P('M64 25C75 16 88 17 95 27C87 27 81 31 76 38C72 34 68 30 64 30Z', '#dbe8f7', 'stroke="#9fbbe0" stroke-width="1" stroke-linejoin="round"') +
+    P('M60 21L44 55H76Z', '#fffdf5', `stroke="${GOLD}" stroke-width="1.1" stroke-linejoin="round"`) + Ln(52, 38, 68, 38, GOLD, 1) +
+    C(60, 16, 5, '#f6d7b8', 'stroke="#d9a877" stroke-width=".7"') + P('M55 15C55 9 65 9 65 15C63 12 57 12 55 15Z', '#c98a3a') + E(60, 8, 7.5, 2, 'none', `stroke="${GOLD}" stroke-width="1.6"`) +
+    star(60, 43, 3.2, '#f0c14b'),
+
+  // ---- Christmas & winter ----
   holly:   () => leaf(46, 32, 20, -62, '#2e7d32', '#1b5e20') + leaf(74, 32, 20, 62, '#388e3c', '#1b5e20') +
-                 `<circle cx="60" cy="25" r="6" fill="#c62828"/><circle cx="53" cy="34" r="6" fill="#d32f2f"/><circle cx="67" cy="34" r="6" fill="#b71c1c"/>`,
+                 C(60, 25, 6, '#c62828') + C(53, 34, 6, '#d32f2f') + C(67, 34, 6, '#b71c1c'),
   snow:    () => flake(28, 32, 17, '#5b8fc9') + flake(64, 22, 11, '#7fa8d6') + flake(95, 36, 14, '#5b8fc9'),
+  tree: () =>
+    P('M60 26L27 53H93Z', '#2e7d32') + P('M60 14L34 40H86Z', '#388e3c') + P('M60 4L41 26H79Z', '#43a047') + R(56, 53, 8, 6, '#7a4a24') +
+    C(48, 47, 2.2, '#c62828') + C(70, 45, 2.2, '#f0c14b') + C(60, 33, 2.2, '#5b8fc9') + C(51, 30, 1.8, '#f0c14b') + C(67, 23, 1.8, '#c62828') + C(80, 50, 2, '#5b8fc9') + C(40, 50, 1.8, '#f0c14b') +
+    star(60, 5, 5.5, '#f0c14b'),
+  ornaments: () => {
+    const bauble = (x, y, r, fill) => Ln(x, 0, x, y - r - 2, '#9aa7b8', .8) + R(x - 2.6, y - r - 2.6, 5.2, 3, GOLD, 'rx=".6"') + C(x, y, r, fill) + C(x - r * .38, y - r * .38, r * .22, '#ffffff', 'opacity=".55"');
+    return bauble(34, 30, 10, '#c62828') + bauble(60, 36, 11, GOLD) + S('M50.5 36L53.5 33L56.5 36L59.5 33L62.5 36L65.5 33L68.5 36', '#fff8e1', 1.4) + bauble(86, 26, 9, '#2e7d32');
+  },
+  candycane: () => {
+    const cane = d => S(d, '#c9c9c9', 8.4) + S(d, '#ffffff', 7) + S(d, '#d62828', 7, 'stroke-linecap="butt" stroke-dasharray="4 4.5"');
+    return cane('M47 56V24C47 11 29 11 29 24') + cane('M73 56V24C73 11 91 11 91 24') +
+      E(55, 40, 7, 3.8, '#2e7d32', 'transform="rotate(-25 55 40)"') + E(65, 40, 7, 3.8, '#2e7d32', 'transform="rotate(25 65 40)"') +
+      P('M58 42L53 52L56 51L58 54Z', '#1b5e20') + P('M62 42L67 52L64 51L62 54Z', '#1b5e20') + C(60, 41, 3, '#1b5e20');
+  },
+  gift: () =>
+    R(40, 25, 40, 30, '#c62828') + R(37, 18, 46, 8, '#b71c1c') + R(57, 18, 6, 37, GOLD) + R(37, 20.5, 46, 3, GOLD) +
+    P('M60 18C51 5 42 11 50 18Z', GOLD_LT, `stroke="${GOLD_DK}" stroke-width=".8"`) + P('M60 18C69 5 78 11 70 18Z', GOLD_LT, `stroke="${GOLD_DK}" stroke-width=".8"`) + C(60, 17, 3, GOLD_DK),
+
+  // ---- Spring & Easter ----
+  flowers: () => flower(30, 30, 17, '#f48fb1', '#f9a825') + flower(64, 25, 11, '#ce93d8', '#f9a825') + flower(95, 33, 14, '#f48fb1', '#f9a825'),
+  tulips: () => {
+    const tulip = (x, y, fill, rot) => G(`translate(${x} ${y}) rotate(${rot})`,
+      P('M-7 -14L-3.5 -9L0 -15L3.5 -9L7 -14C8 -4 4 0 0 0C-4 0 -8 -4 -7 -14Z', fill));
+    return S('M40 58Q41 44 42 34', '#4f7a2a', 1.6) + S('M60 58V28', '#4f7a2a', 1.6) + S('M80 58Q79 44 78 36', '#4f7a2a', 1.6) +
+      leaf(35, 50, 8, -25, '#5f8f32', '', .35) + leaf(66, 50, 9, 20, '#6b9a3a', '', .35) + leaf(85, 51, 7, 28, '#5f8f32', '', .35) +
+      tulip(42, 34, '#e53935', -6) + tulip(60, 28, '#f48fb1', 0) + tulip(78, 36, '#f9c22e', 6);
+  },
+  eggs: () =>
+    egg(36, 36, 21, 28, '#f8bbd0') + C(30, 30, 1.8, '#fff') + C(40, 34, 1.8, '#fff') + C(33, 42, 1.8, '#fff') + C(42, 43, 1.5, '#fff') +
+    egg(60, 32, 23, 31, '#b3e5fc') + S('M50.5 30L54.5 26L58.5 30L62.5 26L66.5 30L69.5 27', '#4fc3f7', 1.8) + S('M50 38.5H70', '#fff', 1.6) +
+    egg(84, 37, 20, 27, '#fff59d') + S('M75.5 34H92.5', '#ffb74d', 1.8) + S('M75 40H93', '#ffb74d', 1.8) + C(84, 29, 1.6, '#ffb74d'),
+  butterfly: () =>
+    E(49, 22, 13, 10, '#4db6ac', 'transform="rotate(-25 49 22)"') + E(71, 22, 13, 10, '#4db6ac', 'transform="rotate(25 71 22)"') +
+    E(51, 38, 9, 7.5, '#ffb74d', 'transform="rotate(25 51 38)"') + E(69, 38, 9, 7.5, '#ffb74d', 'transform="rotate(-25 69 38)"') +
+    C(46, 20, 3, '#00796b') + C(74, 20, 3, '#00796b') + C(51, 38, 2.2, '#ef6c00') + C(69, 38, 2.2, '#ef6c00') +
+    E(60, 30, 2.2, 13, '#4e342e') + S('M59 18C57 12 54 9 51 8M61 18C63 12 66 9 69 8', '#4e342e', 1),
+  shamrock: () => {
+    const lf = rot => G(`rotate(${rot} 60 27)`, heart(60, 27 - 8.8, 1.26, '#2e8b3d'));
+    return S('M60 29Q62 44 71 55', '#2e7d32', 2.4) + lf(0) + lf(120) + lf(240) + C(60, 27, 1.8, '#1b5e20');
+  },
+
+  // ---- Summer & autumn ----
+  sunflower: () => {
+    let s = S('M60 38Q58 48 60 59', '#4f7a2a', 2.2) + leaf(52, 50, 7, -50, '#5f8f32', '#4a6b17', .5);
+    for (let i = 0; i < 16; i++) s += leaf(60 + 12 * Math.cos(i * Math.PI / 8), 24 + 12 * Math.sin(i * Math.PI / 8), 7, i * 22.5 + 90, i % 2 ? '#f5b800' : '#ffcc33', '', .42);
+    s += C(60, 24, 8.5, '#6b3e1e');
+    for (let i = 0; i < 8; i++) s += C(60 + 4.5 * Math.cos(i * Math.PI / 4), 24 + 4.5 * Math.sin(i * Math.PI / 4), .9, '#3e2410');
+    return s;
+  },
+  leaves:  () => leaf(30, 30, 18, -30, '#d35400', '#8e3200') + leaf(63, 28, 16, 22, '#e0a526', '#8a5a00') + leaf(94, 32, 17, -12, '#b03a2e', '#6e1f18'),
+  pumpkin: () =>
+    E(47, 37, 14, 17, '#e8761e', 'stroke="#c85a10" stroke-width=".8"') + E(73, 37, 14, 17, '#e8761e', 'stroke="#c85a10" stroke-width=".8"') +
+    E(60, 37, 15, 18.5, '#f28c28', 'stroke="#c85a10" stroke-width=".8"') +
+    P('M57.5 19.5C57 13 59.5 8.5 64 7.5L65.5 10.5C62.5 11.5 62 15 62.5 19.5Z', '#5d7a2b') + leaf(72, 13, 6, 65, '#6b8e23', '#4a6b17', .6) +
+    S('M66 11C70 5 76 8 73 12', '#5d7a2b', 1),
+
+  // ---- Celebrations ----
   hearts:  () => heart(30, 32, 1.6, '#d64545') + heart(63, 24, 1.05, '#e57373') + heart(94, 34, 1.35, '#c62828'),
   stars:   () => star(28, 32, 17, '#e0a526') + star(63, 22, 10, '#f0c14b') + star(94, 34, 14, '#e0a526'),
-  leaves:  () => leaf(30, 30, 18, -30, '#d35400', '#8e3200') + leaf(63, 28, 16, 22, '#e0a526', '#8a5a00') + leaf(94, 32, 17, -12, '#b03a2e', '#6e1f18'),
-  flowers: () => flower(30, 30, 17, '#f48fb1', '#f9a825') + flower(64, 25, 11, '#ce93d8', '#f9a825') + flower(95, 33, 14, '#f48fb1', '#f9a825'),
+  rings: () =>
+    C(51, 35, 14, 'none', `stroke="${GOLD}" stroke-width="3.6"`) + C(69, 31, 14, 'none', `stroke="${GOLD_LT}" stroke-width="3.6"`) +
+    P('M69 12.5L73 16.5L69 20.5L65 16.5Z', '#e3f4ff', 'stroke="#8cc5e8" stroke-width=".9"') + sparkle(78, 10, 4, GOLD_LT) + sparkle(40, 16, 3, GOLD_LT),
+  bells: () => {
+    const bell = (x, y, rot) => G(`translate(${x} ${y}) rotate(${rot})`,
+      P('M0 -14C-7 -14 -9 -8 -9 -2C-9 4 -11 7 -13 9H13C11 7 9 4 9 -2C9 -8 7 -14 0 -14Z', GOLD, `stroke="${GOLD_DK}" stroke-width=".8"`) + C(0, 11, 2.6, GOLD_DK));
+    return bell(47, 33, 14) + bell(73, 33, -14) +
+      E(55, 16, 6, 3.2, '#f4c7c3', 'transform="rotate(-20 55 16)"') + E(65, 16, 6, 3.2, '#f4c7c3', 'transform="rotate(20 65 16)"') + C(60, 17, 2.6, '#e8a8a2') +
+      S('M58 19L54 26M62 19L66 26', '#e8a8a2', 1.6);
+  },
+  balloons: () => {
+    const b = (x, y, fill) => E(x, y, 9, 11, fill) + P(`M${x - 2} ${y + 11}L${x + 2} ${y + 11}L${x} ${y + 13.5}Z`, fill) + E(x - 3, y - 4, 2, 3, '#fff', 'opacity=".45"');
+    return S('M44 33Q50 46 60 58', '#9aa7b8', .8) + S('M60 29Q58 44 60 58', '#9aa7b8', .8) + S('M76 35Q70 48 60 58', '#9aa7b8', .8) +
+      b(44, 20, '#e53935') + b(76, 22, '#1e88e5') + b(60, 16, '#fdd835');
+  },
+  fireworks: () => {
+    const burst = (x, y, r, c, n) => rays(x, y, r * .3, r, n, c, 1.3) + (() => { let s = ''; for (let i = 0; i < n; i++) { const a = i * 2 * Math.PI / n; s += C(x + r * 1.15 * Math.cos(a), y + r * 1.15 * Math.sin(a), 1.1, c); } return s; })() + C(x, y, 1.5, c);
+    return burst(36, 24, 16, '#e53935', 12) + burst(78, 18, 12, '#1e88e5', 10) + burst(86, 44, 9, GOLD, 8) + sparkle(57, 44, 3.5, GOLD_LT) + sparkle(18, 48, 2.5, GOLD_LT);
+  },
+  gradcap: () =>
+    P('M42 29V41C50 47 70 47 78 41V29L60 35Z', '#2b2b2b') + P('M60 11L97 23L60 35L23 23Z', '#3a3a3a', 'stroke="#1c1c1c" stroke-width=".8"') +
+    C(60, 23, 1.8, GOLD) + S('M60 23L88 27V43', GOLD, 1.3) + P('M85.5 43H90.5L91.5 52H84.5Z', GOLD),
 };
-const decoSVG = key => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">${DECOS[key]()}</svg>`;
+// Menu groups, in order. Keys not listed here still work (older saved settings).
+const DECO_MENU = [
+  ['Faith', [['cross', 'Cross'], ['dove', 'Dove & olive branch · Confirmation'], ['chalice', 'Chalice & host · First Communion'], ['sacredHeart', 'Sacred Heart'],
+    ['rosary', 'Rosary'], ['marian', 'Marian M & cross'], ['ichthys', 'Ichthys fish'], ['shell', 'Shell & water · Baptism'], ['candle', 'Candle · Baptism & remembrance'],
+    ['lilies', 'Easter lilies'], ['palm', 'Palm branch · Palm Sunday'], ['advent', 'Advent wreath'], ['bethlehem', 'Star of Bethlehem'], ['angel', 'Christmas angel']]],
+  ['Christmas & winter', [['holly', 'Holly'], ['tree', 'Christmas tree'], ['ornaments', 'Ornaments'], ['candycane', 'Candy canes'], ['gift', 'Gift'], ['snow', 'Snowflakes']]],
+  ['Spring & Easter', [['flowers', 'Flowers'], ['tulips', 'Tulips'], ['eggs', 'Easter eggs'], ['butterfly', 'Butterfly'], ['shamrock', 'Shamrock · St Patrick']]],
+  ['Summer & autumn', [['sunflower', 'Sunflower'], ['leaves', 'Autumn leaves'], ['pumpkin', 'Pumpkin']]],
+  ['Celebrations', [['hearts', 'Hearts'], ['stars', 'Stars'], ['rings', 'Wedding rings'], ['bells', 'Wedding bells'], ['balloons', 'Balloons · birthday'],
+    ['fireworks', 'Fireworks · New Year & July 4th'], ['gradcap', 'Graduation cap']]],
+];
+
+// "Match ink colour": every outline takes the ink colour (unless it's pure white), and fills
+// become the ink colour or white depending on how light they are. One-colour, formal look.
+const isLight = hex => {
+  const h = hex.length === 4 ? hex.replace(/#(.)(.)(.)/, '#$1$1$2$2$3$3') : hex;
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.78;
+};
+const monoize = (svg, ink) => svg.replace(/(fill|stroke)="(#[0-9a-fA-F]{3,6})"/g, (m, attr, c) =>
+  attr === 'stroke' ? (/^#f{3}(f{3})?$/i.test(c) ? m : `stroke="${ink}"`) : `fill="${isLight(c) ? '#ffffff' : ink}"`);
+const decoSVG = key => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">${DECOS[key]()}</svg>`;
+  return state.decoMono ? monoize(svg, inkColor()) : svg;
+};
 
 // ============================================================================
 // Logo
@@ -2585,6 +2811,8 @@ $('#font').innerHTML = [...new Set(FONTS.map(f => f[2]))].map(g =>
   `<optgroup label="${g}">` + FONTS.filter(f => f[2] === g).map(([n, css]) => `<option value='${css}' style='font-family:${css}'>${n}</option>`).join('') + '</optgroup>'
 ).join('');
 $('#ink').innerHTML = INKS.map(i => `<option value="${i.key}">${i.name}</option>`).join('');
+$('#deco').innerHTML = '<option value="none">None</option>' + DECO_MENU.map(([group, items]) =>
+  `<optgroup label="${group}">` + items.map(([key, name]) => `<option value="${key}">${name}</option>`).join('') + '</optgroup>').join('');
 $('#paper').innerHTML = PAPERS.map(p => `<option value="${p.key}">${p.name}</option>`).join('');
 
 // Inputs with data-len hold lengths: shown and typed in the current unit, stored in inches.
