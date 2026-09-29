@@ -4,12 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Free Envelope Printer – Print Addresses on Envelopes from a List or Spreadsheet</title>
-<meta name="description" content="Print addresses on envelopes without fighting Word. Paste a list or import a spreadsheet, pick #10, A7, DL or any size, drag to place, and print a whole batch. Free, no signup, nothing uploaded.">
+<meta name="description" content="Print addresses on envelopes without fighting Word. Paste a list or import a spreadsheet, pick #10, A7, DL or any size, drag to place, and print a whole batch. Script fonts and seasonal flourishes for wedding invitations and holiday cards. Free, no signup, nothing uploaded.">
 <meta property="og:title" content="Free Envelope Printer">
 <meta property="og:description" content="Paste or import addresses, pick an envelope size, drag to place, print. Free, no signup, and your addresses never leave your browser.">
 <meta property="og:type" content="website">
 <script data-goatcounter="https://squirrelscripts.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:wght@500;600&family=Dancing+Script:wght@500&family=Great+Vibes&family=Parisienne&family=Pinyon+Script&family=Playfair+Display:wght@400;500&family=Sacramento&display=swap">
+<script>
+  // Apply a saved light/dark choice before first paint, so the page doesn't flash the wrong theme.
+  try { const t = (JSON.parse(localStorage.getItem('envelopePrint.v1')) || {}).theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%89%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <style id="pageStyle"></style>
 <style>
@@ -17,17 +24,29 @@
   --bg:#f4f2ee; --panel:#fff; --ink:#1d1d1f; --muted:#6b6b70; --line:#dedad3;
   --accent:#2f5d8a; --accent-ink:#fff; --field:#fff; --warn:#b3261e; --warn-bg:#fdecea;
   --desk:#e4e0d8; --paper:#fffdf8;
-  --glass:rgba(244,242,238,.78); --toast-bg:#1d1d1f; --toast-ink:#fff; --toast-warn:#8c1d18;
+  --glass:rgba(244,242,238,.78); --toast-bg:#1d1d1f; --toast-ink:#fff; --toast-warn:#8c1d18; --toast-warn-ink:#fff;
+  color-scheme:light;
   interpolate-size:allow-keywords;   /* lets the settings sections animate open to their natural height */
 }
+/* Dark tokens: follow the system unless the header toggle picked light, or always when it picked dark. */
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:not([data-theme="light"]){
     --bg:#1b1c1e; --panel:#242528; --ink:#ececee; --muted:#9a9aa1; --line:#3a3b3f;
     --accent:#7fa8d6; --accent-ink:#0f1720; --field:#1b1c1e; --warn:#ff8a80; --warn-bg:#3a2322;
     --desk:#2e2f33;
-    --glass:rgba(27,28,30,.78); --toast-bg:#ececee; --toast-ink:#1b1c1e; --toast-warn:#ffb4ab;
+    --glass:rgba(27,28,30,.78); --toast-bg:#ececee; --toast-ink:#1b1c1e; --toast-warn:#ffb4ab; --toast-warn-ink:#3a0906;
+    color-scheme:dark;
   }
 }
+:root[data-theme="dark"]{
+  --bg:#1b1c1e; --panel:#242528; --ink:#ececee; --muted:#9a9aa1; --line:#3a3b3f;
+  --accent:#7fa8d6; --accent-ink:#0f1720; --field:#1b1c1e; --warn:#ff8a80; --warn-bg:#3a2322;
+  --desk:#2e2f33;
+  --glass:rgba(27,28,30,.78); --toast-bg:#ececee; --toast-ink:#1b1c1e; --toast-warn:#ffb4ab; --toast-warn-ink:#3a0906;
+  color-scheme:dark;
+}
+/* Brief cross-fade while switching themes. */
+.theme-fade,.theme-fade *{transition:background-color .35s ease,color .35s ease,border-color .35s ease !important}
 *{box-sizing:border-box}
 [hidden]{display:none !important}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
@@ -48,7 +67,9 @@ textarea.dropping{outline:2px dashed var(--accent);outline-offset:-1px}
 .guide details p{margin:8px 0 2px;color:var(--muted)}
 .guide table{border-collapse:collapse;margin-top:8px;font-size:13px}
 .guide td,.guide th{border:1px solid var(--line);padding:4px 10px;text-align:left}
-.site-foot{border-top:1px solid var(--line);margin-top:28px;padding:18px 20px 28px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:13px}
+/* Slim strip anchored at the bottom of the window, under the print bar (desktop).
+   On phones it simply ends the page, above the fixed print bar. */
+.site-foot{flex:none;border-top:1px solid var(--line);padding:7px 20px;display:flex;gap:18px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:12px;background:var(--bg)}
 .site-foot a{color:var(--accent)}
 main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;padding:16px;align-items:start}
 @media (max-width:860px){main{grid-template-columns:minmax(0,1fr)}}   /* minmax: a wide strip scrolls instead of widening the page */
@@ -183,8 +204,41 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
 .toast{max-width:min(560px,calc(100vw - 32px));padding:9px 16px;border-radius:999px;background:var(--toast-bg);color:var(--toast-ink);font-size:13px;text-align:center;
   box-shadow:0 8px 28px rgba(0,0,0,.28);opacity:0;transform:translateY(10px) scale(.98);transition:opacity .22s ease,transform .22s ease}
 .toast.in{opacity:1;transform:none}
-.toast.warn{background:var(--toast-warn);color:#fff}
-@media (prefers-color-scheme: dark){ .toast.warn{color:#3a0906} }
+.toast.warn{background:var(--toast-warn);color:var(--toast-warn-ink)}
+.toast.has-action{pointer-events:auto;display:flex;align-items:center;gap:12px;padding-right:8px}
+.toast-action{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;padding:2px 8px;border-radius:999px}
+.toast-action:hover{background:rgba(127,127,127,.2)}
+
+/* Header theme toggle */
+.icon-btn{padding:3px 10px;border-radius:999px;font-size:14px;line-height:1.3;align-self:center}
+@media (min-width:861px){ header .privacy + .icon-btn{margin-left:4px} }
+
+/* Paper feel on the on-screen envelope only (print and thumbnails stay plain). */
+.stage .env{
+  background-color:var(--paper);
+  background-image:linear-gradient(to bottom,rgba(0,0,0,.035),transparent 14%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .3 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  box-shadow:0 1px 2px rgba(0,0,0,.12),0 10px 28px rgba(0,0,0,.2);
+}
+/* A postage stamp with perforated edges: paper-coloured dots bite into each side. */
+.stamp.fancy{border:0;color:#9a8f7a;font:600 9px/1 "Segoe UI",sans-serif;letter-spacing:.14em;transform:rotate(2deg);
+  background:
+    radial-gradient(circle,var(--paper) 1.7px,transparent 2.1px) 0 -3px/6px 6px repeat-x,
+    radial-gradient(circle,var(--paper) 1.7px,transparent 2.1px) 0 calc(100% + 3px)/6px 6px repeat-x,
+    radial-gradient(circle,var(--paper) 1.7px,transparent 2.1px) -3px 0/6px 6px repeat-y,
+    radial-gradient(circle,var(--paper) 1.7px,transparent 2.1px) calc(100% + 3px) 0/6px 6px repeat-y,
+    #efe8d9;
+  outline:1px dashed rgba(120,105,80,.25);outline-offset:-6px}
+
+/* Seasonal flourish block */
+.block.deco{line-height:0}
+.block.deco svg{display:block;width:100%;height:100%;pointer-events:none}
+.block.deco:hover .handle,.block.deco:focus .handle,.block.deco.dragging .handle{opacity:1}
+
+/* Print send-off envelopes and the squirrel */
+.flyer{position:fixed;z-index:70;pointer-events:none;font-size:20px;line-height:1;will-change:transform,opacity}
+.squirrel{position:absolute;right:26px;bottom:-48px;z-index:3;font-size:34px;line-height:1;pointer-events:none}
+.squirrel .bubble{position:absolute;right:34px;top:-14px;padding:2px 9px;border-radius:999px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font:600 11px/1.5 "Segoe UI",sans-serif;white-space:nowrap}
 
 @media (prefers-reduced-motion: reduce){
   .sect::details-content,.sect > summary::after,.strip .thumb,.toast{transition:none}
@@ -209,6 +263,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   <h1>Free Envelope Printer</h1>
   <span class="tagline">Paste or import addresses, pick a size, drag to place, print.</span>
   <span class="privacy">🔒 Your addresses never leave your browser. No signup, no upload.</span>
+  <button id="themeBtn" class="icon-btn" type="button"></button>
 </header>
 
 <main>
@@ -229,12 +284,13 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
       <div class="body">
       <textarea id="recipients" data-key="recipients" rows="11" placeholder="Jane Doe&#10;123 Main Street&#10;Springfield, IL 62701&#10;&#10;John Smith&#10;456 Oak Avenue, Apt 2&#10;Riverside, CA 92501"></textarea>
       <div class="btn-row">
-        <button id="importBtn">Import spreadsheet (CSV)…</button>
-        <button id="templateBtn" title="A ready-made spreadsheet with the right columns">Download template</button>
+        <button id="importBtn" title="Import a spreadsheet saved as CSV">Import CSV…</button>
+        <button id="templateBtn" title="A ready-made spreadsheet with the right columns">Get template</button>
+        <button id="tidyBtn" title="Fix capitals, spacing and postal abbreviations, and drop exact duplicates">✨ Tidy up</button>
         <button id="clearBtn">Clear</button>
       </div>
       <input type="file" id="importFile" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" hidden>
-      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. Columns named Name, Address, City, State and ZIP are recognized and put in the right order. Starting a list from scratch? <b>Download template</b> gives you a spreadsheet with the columns already set up.</p>
+      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. Columns named Name, Address, City, State and ZIP are recognized and put in the right order. Starting a list from scratch? <b>Get template</b> gives you a spreadsheet with the columns already set up.</p>
       </div>
     </details>
 
@@ -265,6 +321,27 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
         <label class="inline" style="margin-top:10px"><input type="checkbox" data-key="logoGray"> Print in black &amp; white</label>
       </div>
       <input type="file" id="logoFile" accept="image/*" hidden>
+      </div>
+    </details>
+
+    <details class="panel sect" data-sect="deco">
+      <summary><h2>Decoration</h2><span class="meta"></span></summary>
+      <div class="body">
+      <label for="deco">Seasonal flourish</label>
+      <select id="deco" data-key="deco">
+        <option value="none">None</option>
+        <option value="holly">Holly · Christmas</option>
+        <option value="snow">Snowflakes · winter</option>
+        <option value="hearts">Hearts · Valentine's &amp; weddings</option>
+        <option value="stars">Stars · celebrations</option>
+        <option value="leaves">Leaves · autumn</option>
+        <option value="flowers">Flowers · spring</option>
+      </select>
+      <div id="decoSize" hidden>
+        <label for="decoW">Width (in)</label>
+        <input id="decoW" data-key="decoW" type="number" min="0.3" step="0.05">
+      </div>
+      <p class="hint">Printed in colour on the envelope. Drag it anywhere, or pull its corner to resize.</p>
       </div>
     </details>
 
@@ -360,7 +437,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   <h2>Questions</h2>
   <details>
     <summary>How do I print envelopes from an Excel or Google Sheets list?</summary>
-    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use <i>Import spreadsheet</i>. Starting from nothing? <i>Download template</i> gives you a spreadsheet with the columns already named: fill in one address per row, save it as CSV, and import it. Its two example rows are skipped automatically. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero in the spreadsheet (2134 instead of 02134) are fixed automatically.</p>
+    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use <i>Import CSV</i>. Starting from nothing? <i>Get template</i> gives you a spreadsheet with the columns already named: fill in one address per row, save it as CSV, and import it. Its two example rows are skipped automatically. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero in the spreadsheet (2134 instead of 02134) are fixed automatically.</p>
   </details>
   <details>
     <summary>Why is the address printing in the wrong spot?</summary>
@@ -382,7 +459,15 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   </details>
   <details>
     <summary>Are my addresses uploaded anywhere?</summary>
-    <p>No. This is a single web page that runs entirely in your browser. Your list, return address and logo are only saved in your own browser so they're there next time, and none of it is ever sent anywhere. The page does count anonymous visits (GoatCounter, no cookies) so we know whether people use it.</p>
+    <p>No. This is a single web page that runs entirely in your browser. Your list, return address and logo are only saved in your own browser so they're there next time, and none of it is ever sent anywhere. The page itself loads its fonts from Google Fonts and counts anonymous visits (GoatCounter, no cookies) so we know whether people use it; neither ever sees your addresses.</p>
+  </details>
+  <details>
+    <summary>Can I address wedding invitations or holiday cards?</summary>
+    <p>Yes. Pick a script font under <i>Text</i> (Great Vibes, Pinyon Script, Parisienne and others); they read best at 16–20pt. Under <i>Decoration</i> you can add a small flourish such as holly, snowflakes, hearts or flowers. For cards, choose A7 (5×7 invitations), A2 (small cards) or C6.</p>
+  </details>
+  <details>
+    <summary>My list is messy. Can it clean it up?</summary>
+    <p><i>✨ Tidy up</i> fixes spacing and all-lowercase names, turns "Street" into "St", "Apartment" into "Apt" and full state names into their two-letter codes, puts the comma in "City, ST ZIP", and removes exact duplicates. It keeps ALL-CAPS lines as they are, and there's an Undo if you don't like the result.</p>
   </details>
   <details>
     <summary>Which browser should I use?</summary>
@@ -393,12 +478,6 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
     <p>Yes. Choose an image in the Logo panel or drop one onto the envelope preview, then drag it into place and pull its corner to resize. Tick <i>Print in black &amp; white</i> for a mono printer.</p>
   </details>
 </section>
-
-<footer class="site-foot">
-  <span>Made by <a href="https://squirrelscripts.github.io/">SquirrelScripts</a> 🐿️</span>
-  <a href="https://squirrelscripts.github.io/">More free tools →</a>
-  <a href="https://buymeacoffee.com/eblank" target="_blank" rel="noopener">☕ Buy me a coffee</a>
-</footer>
   </div>
   <div class="printbar">
     <span class="pb-status" id="pbStatus"></span>
@@ -408,6 +487,12 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   </div>
   </div>
 </main>
+
+<footer class="site-foot">
+  <span>Made by <a href="https://squirrelscripts.github.io/">SquirrelScripts</a> 🐿️</span>
+  <a href="https://squirrelscripts.github.io/">More free tools →</a>
+  <a href="https://buymeacoffee.com/eblank" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+</footer>
 
 <div id="toasts" aria-live="polite"></div>
 <div id="measure" aria-hidden="true"></div>
@@ -433,19 +518,29 @@ const SIZES = [
   { key:'c4',      name:'C4 (229 × 324 mm)',     w:12.756, h:9.016 },
   { key:'custom',  name:'Custom size…' },
 ];
+// [menu name, CSS font-family, menu group]. The Script and Elegant faces load from Google Fonts.
 const FONTS = [
-  ['Arial',               'Arial, Helvetica, sans-serif'],
-  ['Calibri',             'Calibri, Carlito, sans-serif'],
-  ['Segoe UI',            '"Segoe UI", system-ui, sans-serif'],
-  ['Verdana',             'Verdana, Geneva, sans-serif'],
-  ['Tahoma',              'Tahoma, Geneva, sans-serif'],
-  ['Century Gothic',      '"Century Gothic", sans-serif'],
-  ['Georgia',             'Georgia, serif'],
-  ['Times New Roman',     '"Times New Roman", Times, serif'],
-  ['Garamond',            'Garamond, "EB Garamond", serif'],
-  ['Palatino',            '"Palatino Linotype", Palatino, serif'],
-  ['Courier New',         '"Courier New", Courier, monospace'],
+  ['Arial',               'Arial, Helvetica, sans-serif',              'Everyday'],
+  ['Calibri',             'Calibri, Carlito, sans-serif',              'Everyday'],
+  ['Segoe UI',            '"Segoe UI", system-ui, sans-serif',         'Everyday'],
+  ['Verdana',             'Verdana, Geneva, sans-serif',               'Everyday'],
+  ['Tahoma',              'Tahoma, Geneva, sans-serif',                'Everyday'],
+  ['Century Gothic',      '"Century Gothic", sans-serif',              'Everyday'],
+  ['Georgia',             'Georgia, serif',                            'Everyday'],
+  ['Times New Roman',     '"Times New Roman", Times, serif',           'Everyday'],
+  ['Garamond',            'Garamond, "EB Garamond", serif',            'Everyday'],
+  ['Palatino',            '"Palatino Linotype", Palatino, serif',      'Everyday'],
+  ['Courier New',         '"Courier New", Courier, monospace',         'Everyday'],
+  ['Playfair Display',    '"Playfair Display", Georgia, serif',        'Elegant'],
+  ['Cormorant Garamond',  '"Cormorant Garamond", Garamond, serif',     'Elegant'],
+  ['Great Vibes',         '"Great Vibes", cursive',                    'Script'],
+  ['Pinyon Script',       '"Pinyon Script", cursive',                  'Script'],
+  ['Parisienne',          'Parisienne, cursive',                       'Script'],
+  ['Allura',              'Allura, cursive',                           'Script'],
+  ['Dancing Script',      '"Dancing Script", cursive',                 'Script'],
+  ['Sacramento',          'Sacramento, cursive',                       'Script'],
 ];
+const isScript = css => (FONTS.find(f => f[1] === css) || [])[2] === 'Script';
 // Shown in the address spot until there's a real address. Test sheets print it as-is.
 const EMPTY = ['Recipient name', 'Street address', 'City, ST ZIP'];
 const KEY = 'envelopePrint.v1';
@@ -457,9 +552,11 @@ const DEFAULTS = {
   font:FONTS[0][1], rcpPt:12, retPt:10, caps:false,
   nudgeX:0, nudgeY:0, rotate:'0',
   logo:null, logoW:1, logoGray:false,
+  deco:'none', decoW:1,
+  theme:'auto',
   positions:{}, idx:0,
   // which settings sections are open; the set-once ones start closed
-  open:{ envelope:true, recipients:true, return:true, logo:false, text:false, printer:false, reset:false },
+  open:{ envelope:true, recipients:true, return:true, logo:false, deco:false, text:false, printer:false, reset:false },
 };
 const state = Object.assign({}, DEFAULTS, load());
 state.open = Object.assign({}, DEFAULTS.open, state.open);
@@ -475,15 +572,26 @@ const fmt = v => String(+(+v).toFixed(3));
 const plural = (n, word, many = word + 's') => `${n} ${n === 1 ? word : many}`;
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function toast(msg, { warn = false, ms = 3200 } = {}){
-  const t = div('toast' + (warn ? ' warn' : ''));
-  t.textContent = msg;
-  $('#toasts').append(t);
-  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('in')));
-  setTimeout(() => {
+// action: { label, fn } adds a button to the toast (e.g. Undo).
+function toast(msg, { warn = false, ms = 3200, action = null } = {}){
+  const t = div('toast' + (warn ? ' warn' : '') + (action ? ' has-action' : ''));
+  const text = document.createElement('span');
+  text.textContent = msg;
+  t.append(text);
+  const dismiss = () => {
     t.classList.remove('in');
     setTimeout(() => t.remove(), reduceMotion() ? 0 : 250);
-  }, ms);
+  };
+  if (action) {
+    const b = document.createElement('button');
+    b.className = 'toast-action';
+    b.textContent = action.label;
+    b.onclick = () => { action.fn(); dismiss(); };
+    t.append(b);
+  }
+  $('#toasts').append(t);
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('in')));
+  setTimeout(dismiss, ms);
 }
 
 function dims(){
@@ -505,9 +613,60 @@ function getPos(){
     p.logo = { x:0.3, y:0.3 };
     if (p.ret.x < 0.35 && p.ret.y < 0.35) { p.ret.x = round2(0.3 + (+state.logoW || 1) + 0.15); p.retShifted = true; }
   }
+  // A flourish starts in the bottom-left corner, clear of the addresses and the postal barcode area.
+  if (state.deco !== 'none' && !p.deco) {
+    const { h } = dims();
+    p.deco = { x:0.3, y:round2(Math.max(0, h - decoH() - 0.3)) };
+  }
   return p;
 }
 const logoH = () => state.logo ? (+state.logoW || 1) * state.logo.h / state.logo.w : 0;
+
+// ---- Seasonal flourishes: small vector drawings on a 120 x 60 canvas ----
+const DECO_RATIO = 0.5;
+const decoH = () => (+state.decoW || 1) * DECO_RATIO;
+const n1 = v => +v.toFixed(1);
+const star = (cx, cy, r, fill) => {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = Math.PI / 5 * i - Math.PI / 2, rr = i % 2 ? r * 0.45 : r;
+    pts.push(n1(cx + rr * Math.cos(a)) + ',' + n1(cy + rr * Math.sin(a)));
+  }
+  return `<polygon points="${pts.join(' ')}" fill="${fill}"/>`;
+};
+const heart = (cx, cy, s, fill) =>
+  `<path transform="translate(${cx} ${cy}) scale(${s})" d="M0 7C-8-1-12-8-6-11C-2-13 0-9 0-7C0-9 2-13 6-11C12-8 8-1 0 7Z" fill="${fill}"/>`;
+const flake = (cx, cy, r, color) => {
+  let s = '';
+  for (let i = 0; i < 6; i++) {
+    const a = Math.PI / 3 * i;
+    s += `<line x1="${cx}" y1="${cy}" x2="${n1(cx + r * Math.cos(a))}" y2="${n1(cy + r * Math.sin(a))}"/>`;
+    const bx = cx + r * 0.6 * Math.cos(a), by = cy + r * 0.6 * Math.sin(a);
+    for (const d of [-0.7, 0.7]) s += `<line x1="${n1(bx)}" y1="${n1(by)}" x2="${n1(bx + r * 0.32 * Math.cos(a + d))}" y2="${n1(by + r * 0.32 * Math.sin(a + d))}"/>`;
+  }
+  return `<g stroke="${color}" stroke-width="${n1(r / 7)}" stroke-linecap="round">${s}</g>`;
+};
+const leaf = (cx, cy, r, rot, fill, vein) =>
+  `<g transform="translate(${cx} ${cy}) rotate(${rot})"><path d="M0 ${-r}C${n1(r * .75)} ${n1(-r * .4)} ${n1(r * .75)} ${n1(r * .4)} 0 ${r}C${n1(-r * .75)} ${n1(r * .4)} ${n1(-r * .75)} ${n1(-r * .4)} 0 ${-r}Z" fill="${fill}"/>` +
+  `<line x1="0" y1="${n1(-r * .8)}" x2="0" y2="${n1(r * 1.3)}" stroke="${vein}" stroke-width="${n1(r / 9)}" stroke-linecap="round"/></g>`;
+const flower = (cx, cy, r, petal, mid) => {
+  let s = '';
+  for (let i = 0; i < 5; i++) {
+    const a = Math.PI * 2 / 5 * i - Math.PI / 2;
+    s += `<circle cx="${n1(cx + r * .55 * Math.cos(a))}" cy="${n1(cy + r * .55 * Math.sin(a))}" r="${n1(r * .45)}" fill="${petal}"/>`;
+  }
+  return s + `<circle cx="${cx}" cy="${cy}" r="${n1(r * .3)}" fill="${mid}"/>`;
+};
+const DECOS = {
+  holly:   () => leaf(46, 32, 20, -62, '#2e7d32', '#1b5e20') + leaf(74, 32, 20, 62, '#388e3c', '#1b5e20') +
+                 `<circle cx="60" cy="25" r="6" fill="#c62828"/><circle cx="53" cy="34" r="6" fill="#d32f2f"/><circle cx="67" cy="34" r="6" fill="#b71c1c"/>`,
+  snow:    () => flake(28, 32, 17, '#5b8fc9') + flake(64, 22, 11, '#7fa8d6') + flake(95, 36, 14, '#5b8fc9'),
+  hearts:  () => heart(30, 32, 1.6, '#d64545') + heart(63, 24, 1.05, '#e57373') + heart(94, 34, 1.35, '#c62828'),
+  stars:   () => star(28, 32, 17, '#e0a526') + star(63, 22, 10, '#f0c14b') + star(94, 34, 14, '#e0a526'),
+  leaves:  () => leaf(30, 30, 18, -30, '#d35400', '#8e3200') + leaf(63, 28, 16, 22, '#e0a526', '#8a5a00') + leaf(94, 32, 17, -12, '#b03a2e', '#6e1f18'),
+  flowers: () => flower(30, 30, 17, '#f48fb1', '#f9a825') + flower(64, 25, 11, '#ce93d8', '#f9a825') + flower(95, 33, 14, '#f48fb1', '#f9a825'),
+};
+const decoSVG = key => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">${DECOS[key]()}</svg>`;
 
 function loadLogo(file){
   if (!file || !file.type.startsWith('image/')) { toast('That file isn’t an image. Try a PNG, JPG or SVG.', { warn:true }); return; }
@@ -661,6 +820,107 @@ function downloadTemplate(){
   toast('Template downloaded. Put one address per row under the headings, save as CSV, then import it here.', { ms:6000 });
 }
 
+// ---- Tidy up: postal-style cleanup of the address list ----
+const SUFFIX = { street:'St', avenue:'Ave', road:'Rd', drive:'Dr', boulevard:'Blvd', lane:'Ln', court:'Ct', place:'Pl',
+  terrace:'Ter', circle:'Cir', parkway:'Pkwy', highway:'Hwy', square:'Sq', trail:'Trl', expressway:'Expy', freeway:'Fwy',
+  crossing:'Xing', heights:'Hts', center:'Ctr', centre:'Ctr', plaza:'Plz', alley:'Aly', cove:'Cv', mountain:'Mtn' };
+const UNIT = { apartment:'Apt', suite:'Ste', building:'Bldg', floor:'Fl', room:'Rm', department:'Dept' };
+const DIRS = { north:'N', south:'S', east:'E', west:'W', northeast:'NE', northwest:'NW', southeast:'SE', southwest:'SW' };
+const STATES = { alabama:'AL', alaska:'AK', arizona:'AZ', arkansas:'AR', california:'CA', colorado:'CO', connecticut:'CT',
+  delaware:'DE', 'district of columbia':'DC', florida:'FL', georgia:'GA', hawaii:'HI', idaho:'ID', illinois:'IL', indiana:'IN',
+  iowa:'IA', kansas:'KS', kentucky:'KY', louisiana:'LA', maine:'ME', maryland:'MD', massachusetts:'MA', michigan:'MI',
+  minnesota:'MN', mississippi:'MS', missouri:'MO', montana:'MT', nebraska:'NE', nevada:'NV', 'new hampshire':'NH',
+  'new jersey':'NJ', 'new mexico':'NM', 'new york':'NY', 'north carolina':'NC', 'north dakota':'ND', ohio:'OH', oklahoma:'OK',
+  oregon:'OR', pennsylvania:'PA', 'rhode island':'RI', 'south carolina':'SC', 'south dakota':'SD', tennessee:'TN', texas:'TX',
+  utah:'UT', vermont:'VT', virginia:'VA', washington:'WA', 'west virginia':'WV', wisconsin:'WI', wyoming:'WY', 'puerto rico':'PR' };
+const STATE_CODES = new Set(Object.values(STATES));
+
+const isAllCaps = s => /[A-Z]/.test(s) && s === s.toUpperCase();
+const isAllLower = s => /[a-z]/.test(s) && s === s.toLowerCase();
+// Title case that copes with McDonald, O'Brien and hyphenated names; numbers like 1st stay as they are.
+const titleWord = w => /^\d/.test(w) ? w : w.toLowerCase()
+  .replace(/(^|[-'’])([a-z])/g, (m, p, c) => p + c.toUpperCase())
+  .replace(/(^|[-'’])Mc([a-z])/g, (m, p, c) => p + 'Mc' + c.toUpperCase());
+
+// Street-ish lines: numbers first, PO boxes, or a unit line such as "Apartment 4".
+function tidyStreet(line){
+  const caps = isAllCaps(line);
+  const out = caps ? s => s.toUpperCase() : s => s;
+  line = line.replace(/^p\.?\s*o\.?\s*box\b/i, out('PO Box'));
+  const words = line.split(' ');
+  const bare = w => w.toLowerCase().replace(/\.$/, '');
+  const unitAt = words.findIndex((w, i) => i > 0 && (UNIT[bare(w)] || /^(apt|ste|unit|#)/i.test(w)));
+  const end = unitAt > 0 ? unitAt : words.length;          // street part ends before any unit
+  const postDir = end - 1 > 2 && DIRS[bare(words[end - 1])] ? end - 1 : -1;   // "Oak Ave North"
+  const suffixAt = postDir > 0 ? postDir - 1 : end - 1;
+  return words.map((w, i) => {
+    const b = bare(w);
+    if (UNIT[b]) return out(UNIT[b]);
+    if (i === suffixAt && SUFFIX[b]) return out(SUFFIX[b]);
+    if ((i === 1 || i === postDir) && DIRS[b] && words.length > 2) return out(DIRS[b]);
+    if (/^(st|ave|rd|dr|blvd|ln|ct|pl|apt|ste)\.$/i.test(w)) return w.slice(0, -1);   // "St." -> "St"
+    return isAllLower(line) ? titleWord(w) : w;
+  }).join(' ');
+}
+
+// "springfield illinois 62701" -> "Springfield, IL 62701". Lines that aren't a recognisable
+// US city/state/ZIP are left alone, so international addresses pass through untouched.
+function tidyCityLine(line){
+  const m = /^(.*?)[\s,]+(\d{3,5}(?:-\d{4})?)$/.exec(line);
+  if (!m) return null;
+  const words = m[1].replace(/,\s*$/, '').split(/[\s,]+/).filter(Boolean);
+  for (let n = 3; n >= 1; n--) {
+    if (words.length <= n) continue;
+    const cand = words.slice(-n).join(' ').toLowerCase().replace(/\./g, '');
+    const code = STATES[cand] || (n === 1 && STATE_CODES.has(cand.toUpperCase()) ? cand.toUpperCase() : null);
+    if (!code) continue;
+    let city = m[1].replace(/,\s*$/, '').split(/\s+/).slice(0, -n).join(' ').replace(/,\s*$/, '');
+    if (isAllLower(city)) city = city.split(' ').map(titleWord).join(' ');
+    return `${city}, ${code} ${fixZip(m[2])}`;
+  }
+  return null;
+}
+
+function tidyBlock(lines){
+  return lines.map((raw, i) => {
+    const line = raw.replace(/\s+/g, ' ').replace(/\s*,\s*$/, '').trim();
+    if (i === lines.length - 1) { const c = tidyCityLine(line); if (c) return c; }
+    if (/^(\d|#|p\.?\s*o\.?\s*box\b)/i.test(line) || UNIT[line.split(' ')[0].toLowerCase()]) return tidyStreet(line);
+    return isAllLower(line) ? line.split(' ').map(titleWord).join(' ') : line;
+  });
+}
+
+function tidyUp(){
+  const before = state.recipients;
+  const blocks = parseRecipients(before);
+  if (!blocks.length) { toast('Add some addresses first, then tidy them up.', { warn:true }); return; }
+  const seen = new Set();
+  let changed = 0, dupes = 0;
+  const out = [];
+  for (const b of blocks) {
+    const t = tidyBlock(b);
+    const key = t.join('\n').toLowerCase();
+    if (seen.has(key)) { dupes++; continue; }
+    seen.add(key);
+    if (t.join('\n') !== b.join('\n')) changed++;
+    out.push(t);
+  }
+  const after = out.map(a => a.join('\n')).join('\n\n');
+  if (!changed && !dupes && after === before.trim()) { toast('✨ Already tidy. Nothing to change.'); return; }
+  state.recipients = after;
+  $('#recipients').value = after;
+  save();
+  render();
+  const parts = [changed ? `tidied ${plural(changed, 'address', 'addresses')}` : '', dupes ? `removed ${plural(dupes, 'duplicate')}` : ''].filter(Boolean);
+  const msg = parts.length ? '✨ ' + parts.join(' · ').replace(/^./, c => c.toUpperCase()) : '✨ Tidied the list layout';
+  toast(msg, { ms:8000, action:{ label:'Undo', fn:() => {
+    state.recipients = before;
+    $('#recipients').value = before;
+    save();
+    render();
+  } } });
+}
+
 function importFile(file){
   if (!file) return;
   if (/\.(xlsx?|numbers|ods)$/i.test(file.name)) {
@@ -679,6 +939,7 @@ function importFile(file){
     if (list.length && !confirm(`Replace the ${plural(list.length, 'address', 'addresses')} already in the list?`)) return;
     state.recipients = found.map(a => a.join('\n')).join('\n\n');
     state.idx = 0;
+    celebrateFit = true;
     $('#recipients').value = state.recipients;
     toast(`Imported ${plural(found.length, 'address', 'addresses')} from ${file.name}.` +
           (skipped ? ` Skipped the template’s ${plural(skipped, 'example row')}.` : ''));
@@ -703,9 +964,9 @@ function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false
   if (state.caps) env.style.textTransform = 'uppercase';
 
   if (stamp) {
-    const st = div('stamp');
+    const st = div(print ? 'stamp' : 'stamp fancy');   // perforated look on screen; a plain box on the test sheet
     Object.assign(st.style, { width:U(0.875), height:U(1), right:U(0.25), top:U(0.25) });
-    st.textContent = 'stamp';
+    st.textContent = print ? 'stamp' : 'STAMP';
     env.append(st);
   }
 
@@ -736,6 +997,18 @@ function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false
     env.append(b);
   }
 
+  if (DECOS[state.deco]) {
+    const b = div('block deco');
+    b.dataset.which = 'deco';
+    b.style.left = U(pos.deco.x + nx);
+    b.style.top = U(pos.deco.y + ny);
+    b.style.width = U(+state.decoW || 1);
+    b.style.height = U(decoH());
+    b.innerHTML = decoSVG(state.deco);
+    if (!print) { b.tabIndex = 0; b.title = 'Drag to move · drag the corner to resize'; b.append(div('handle')); }
+    env.append(b);
+  }
+
   if (state.printReturn) {
     const ret = (state.returnText || '').split('\n').map(s => s.trim()).filter(Boolean).join('\n');
     if (ret) add('ret', ret, pos.ret, +state.retPt || 10);
@@ -761,6 +1034,7 @@ function render(){
   $('#logoEmpty').hidden = !!state.logo;
   $('#logoSet').hidden = $('#logoPosX').hidden = $('#logoPosY').hidden = !state.logo;
   if (state.logo) { $('#logoThumb').src = state.logo.src; $('#logoThumb').style.filter = state.logoGray ? 'grayscale(1)' : ''; }
+  $('#decoSize').hidden = !DECOS[state.deco];
   updateNav();
   updateMeta();
   renderPreview();
@@ -777,15 +1051,17 @@ function go(i){
   if (!list.length) return;
   const next = clamp(i, 0, list.length - 1);
   if (next === state.idx) return;
+  const dir = Math.sign(next - state.idx);
   state.idx = next;
   currentLines = list[next];
   save();
   updateNav();
-  renderPreview(null, false);
+  renderPreview(null, false, dir);
   markStrip();
 }
 
-function renderPreview(focusWhich, remeasure = true){
+// slide: -1 / 1 slides the new envelope in from that side, like dealing the next card.
+function renderPreview(focusWhich, remeasure = true, slide = 0){
   const { w, h } = dims();
   const stage = $('#stage');
   const avail = stage.clientWidth - 48;
@@ -801,6 +1077,10 @@ function renderPreview(focusWhich, remeasure = true){
     stage.append(hint);
   }
   morph(env, w, h);
+  if (slide && !reduceMotion()) {
+    env.animate([{ transform:`translateX(${slide * 56}px) rotate(${slide * 1.5}deg)`, opacity:0 }, { transform:'none', opacity:1 }],
+                { duration:260, easing:'cubic-bezier(.2,.8,.2,1)' });
+  }
   $('#sizeReadout').textContent = `${sizeName()} · ${fmt(w)} × ${fmt(h)} in`;
   syncPosInputs();
   overflows(env).forEach(b => b.classList.add('over'));
@@ -831,6 +1111,7 @@ function updateMeta(){
     recipients: list.length ? plural(list.length, 'address', 'addresses') : 'None yet',
     return: !state.printReturn ? 'Off' : (ret || 'Not set'),
     logo: state.logo ? 'Added' : 'None',
+    deco: DECOS[state.deco] ? $('#deco').selectedOptions[0].textContent.split(' · ')[0] : 'None',
     text: `${font} ${fmt(state.rcpPt)}pt${state.caps ? ' · CAPS' : ''}`,
     printer: printer || 'None',
     reset: '',
@@ -842,10 +1123,41 @@ function syncSections(){
   document.querySelectorAll('.sect').forEach(s => { s.open = !!state.open[s.dataset.sect]; });
 }
 
-let measureTimer;
+let measureTimer, prevBad = null, celebrateFit = false;
 function scheduleMeasure(){
   clearTimeout(measureTimer);
-  measureTimer = setTimeout(() => { measureAll(); buildStrip(); updateStatus(); }, 120);
+  measureTimer = setTimeout(() => {
+    measureAll();
+    buildStrip();
+    updateStatus();
+    // The squirrel shows up when a batch goes from "something runs off" to "everything fits",
+    // or when a freshly imported list fits first time.
+    const fits = list.length && !badIdx.length;
+    if (fits && ((prevBad && prevBad > 0) || celebrateFit)) peekSquirrel();
+    celebrateFit = false;
+    prevBad = badIdx.length;
+  }, 120);
+}
+
+function peekSquirrel(){
+  if (reduceMotion()) { toast('🐿️ Every envelope fits.'); return; }
+  $('#stage .squirrel')?.remove();
+  const sq = document.createElement('span');
+  sq.className = 'squirrel';
+  sq.setAttribute('aria-hidden', 'true');
+  sq.textContent = '🐿️';
+  const bubble = document.createElement('span');
+  bubble.className = 'bubble';
+  bubble.textContent = 'All fit!';
+  sq.append(bubble);
+  $('#stage').append(sq);
+  sq.animate([
+    { transform:'translateY(0)' },
+    { transform:'translateY(-52px) rotate(-6deg)', offset:.18 },
+    { transform:'translateY(-50px) rotate(4deg)', offset:.45 },
+    { transform:'translateY(-52px) rotate(-3deg)', offset:.8 },
+    { transform:'translateY(0)' },
+  ], { duration:2400, easing:'ease-in-out' }).onfinish = () => sq.remove();
 }
 
 // Lay out every address off-screen at preview scale and note which ones spill off the envelope.
@@ -943,28 +1255,31 @@ function overflows(env){
   return bad;
 }
 
+// Corner-drag resizing for the logo and the flourish; both keep their proportions.
 function makeResizable(b){
   const handle = b.querySelector('.handle');
   if (!handle) return;
+  const which = b.dataset.which;
+  const key = which === 'logo' ? 'logoW' : 'decoW';
   handle.addEventListener('pointerdown', e => {
     e.preventDefault();
     e.stopPropagation();
     try { handle.setPointerCapture(e.pointerId); } catch {}
     b.classList.add('dragging');
-    const sx = e.clientX, ow = +state.logoW || 1;
-    const ratio = state.logo.h / state.logo.w;
+    const sx = e.clientX, ow = +state[key] || 1;
+    const ratio = which === 'logo' ? state.logo.h / state.logo.w : DECO_RATIO;
     const move = ev => {
-      state.logoW = clamp(round2(ow + (ev.clientX - sx) / ppi), 0.2, dims().w);
-      b.style.width = state.logoW * ppi + 'px';
-      b.style.height = state.logoW * ratio * ppi + 'px';
-      $('#logoW').value = fmt(state.logoW);
+      state[key] = clamp(round2(ow + (ev.clientX - sx) / ppi), 0.2, dims().w);
+      b.style.width = state[key] * ppi + 'px';
+      b.style.height = state[key] * ratio * ppi + 'px';
+      $('#' + key).value = fmt(state[key]);
     };
     const up = () => {
       handle.removeEventListener('pointermove', move);
       handle.removeEventListener('pointerup', up);
       handle.removeEventListener('pointercancel', up);
       save();
-      renderPreview('logo');
+      renderPreview(which);
     };
     handle.addEventListener('pointermove', move);
     handle.addEventListener('pointerup', up);
@@ -1015,11 +1330,38 @@ function makeInteractive(b){
   });
 }
 
+let pendingSendOff = 0;   // envelopes in the job just handed to the print dialog
+
 async function doPrint(mode){
+  // Web fonts have to be loaded before printing, or the envelopes fall back to a plain font.
+  try { await document.fonts.load(`16px ${state.font}`); await document.fonts.ready; } catch {}
   if (!buildPrint(mode)) return;
   // Make sure every logo copy is decoded, or the first pages can print blank where it goes.
   await Promise.all([...$('#printRoot').querySelectorAll('img')].map(i => i.decode().catch(() => {})));
+  pendingSendOff = mode === 'test' ? 0 : $('#printRoot').children.length;
   setTimeout(() => window.print(), 50);
+}
+
+// After the print dialog closes: a little flock of envelopes flutters up from the Print button.
+function sendOff(n){
+  toast(`${plural(n, 'envelope')} off to the printer 🎉`);
+  if (reduceMotion()) return;
+  const r = $('#printAll').getBoundingClientRect();
+  const x0 = r.left + r.width / 2, y0 = r.top + r.height / 2;
+  for (let i = 0; i < 12; i++) {
+    const f = document.createElement('span');
+    f.className = 'flyer';
+    f.textContent = '✉️';
+    f.style.left = x0 - 10 + 'px';
+    f.style.top = y0 - 10 + 'px';
+    document.body.append(f);
+    const dx = (Math.random() - .5) * 260, rise = 160 + Math.random() * 220, spin = (Math.random() - .5) * 90;
+    f.animate([
+      { transform:'translate(0,0) scale(.5)', opacity:0 },
+      { transform:`translate(${dx * .5}px,${-rise * .45}px) rotate(${spin * .5}deg) scale(1)`, opacity:1, offset:.3 },
+      { transform:`translate(${dx}px,${-rise}px) rotate(${spin}deg) scale(.9)`, opacity:0 },
+    ], { duration:1100 + Math.random() * 500, delay:i * 45, easing:'cubic-bezier(.2,.7,.3,1)', fill:'backwards' }).onfinish = () => f.remove();
+  }
 }
 
 // Lays out the print pages. Kept separate from doPrint so the browser's own Print command
@@ -1084,12 +1426,17 @@ function buildPrint(mode){
 window.addEventListener('beforeprint', () => {
   if (!$('#printRoot').children.length) buildPrint(list.length ? 'all' : 'test');
 });
-window.addEventListener('afterprint', () => $('#printRoot').replaceChildren());
+window.addEventListener('afterprint', () => {
+  $('#printRoot').replaceChildren();
+  if (pendingSendOff) { const n = pendingSendOff; pendingSendOff = 0; setTimeout(() => sendOff(n), 150); }
+});
 
 // ---- wire up ----
 $('#size').innerHTML = SIZES.map(s =>
   `<option value="${s.key}">${s.name}${s.w ? ` — ${fmt(s.w)} × ${fmt(s.h)} in` : ''}</option>`).join('');
-$('#font').innerHTML = FONTS.map(([n, css]) => `<option value='${css}' style='font-family:${css}'>${n}</option>`).join('');
+$('#font').innerHTML = [...new Set(FONTS.map(f => f[2]))].map(g =>
+  `<optgroup label="${g}">` + FONTS.filter(f => f[2] === g).map(([n, css]) => `<option value='${css}' style='font-family:${css}'>${n}</option>`).join('') + '</optgroup>'
+).join('');
 
 document.querySelectorAll('[data-key]').forEach(el => {
   const k = el.dataset.key;
@@ -1101,8 +1448,38 @@ document.querySelectorAll('[data-key]').forEach(el => {
     else state[k] = el.value;
     save();
     render();
+    if (k === 'font' && isScript(state.font) && (+state.rcpPt || 12) < 15) {
+      toast('Script fonts read best a bit bigger: 16–20pt for the address.', { ms:7000, action:{ label:'Make it 18pt', fn:() => {
+        state.rcpPt = 18; $('#rcpPt').value = 18; save(); render();
+      } } });
+    }
   });
 });
+
+// Light / dark / follow-the-system toggle in the header.
+const THEMES = { auto:{ icon:'◐', next:'light', label:'Theme: matches your system' },
+                 light:{ icon:'☀', next:'dark', label:'Theme: light' },
+                 dark:{ icon:'☾', next:'auto', label:'Theme: dark' } };
+function applyTheme(fade){
+  const root = document.documentElement;
+  const t = THEMES[state.theme] ? state.theme : 'auto';
+  if (fade && !reduceMotion()) { root.classList.add('theme-fade'); setTimeout(() => root.classList.remove('theme-fade'), 400); }
+  if (t === 'auto') delete root.dataset.theme; else root.dataset.theme = t;
+  $('#themeBtn').textContent = THEMES[t].icon;
+  $('#themeBtn').title = THEMES[t].label + ' (click to change)';
+  $('#themeBtn').setAttribute('aria-label', THEMES[t].label);
+}
+$('#themeBtn').onclick = () => {
+  state.theme = THEMES[state.theme]?.next || 'light';
+  save();
+  applyTheme(true);
+  toast(THEMES[state.theme].label.replace('Theme: ', 'Theme set to '));
+};
+applyTheme(false);
+
+$('#tidyBtn').onclick = tidyUp;
+// A web font that finishes loading changes text widths, so redraw and re-measure.
+document.fonts?.addEventListener?.('loadingdone', () => renderPreview());
 
 $('#logoPick').onclick = $('#logoReplace').onclick = () => $('#logoFile').click();
 $('#logoFile').onchange = e => { loadLogo(e.target.files[0]); e.target.value = ''; };
