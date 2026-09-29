@@ -17,6 +17,9 @@
   // Apply a saved light/dark choice before first paint, so the page doesn't flash the wrong theme.
   try { const t = (JSON.parse(localStorage.getItem('envelopePrint.v1')) || {}).theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
 </script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f5d8a">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%89%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <style id="pageStyle"></style>
 <style>
@@ -257,6 +260,69 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
 .squirrel{position:absolute;right:26px;bottom:-48px;z-index:3;font-size:34px;line-height:1;pointer-events:none}
 .squirrel .bubble{position:absolute;right:34px;top:-14px;padding:2px 9px;border-radius:999px;background:var(--panel);color:var(--ink);border:1px solid var(--line);font:600 11px/1.5 "Segoe UI",sans-serif;white-space:nowrap}
 
+/* Segmented switches: mode, units, front/back, tracker filter */
+.seg{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--field);vertical-align:middle}
+.seg.full{display:flex;margin-bottom:4px}
+.seg.full button{flex:1}
+.seg button{border:0;background:none;color:var(--muted);padding:5px 12px;border-radius:6px;font-size:13px}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.soft{font-weight:400;color:var(--muted)}
+
+/* Saved lists bar above the address box */
+.list-row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.list-row select{flex:1;min-width:0;height:34px}
+
+/* Text blocks: one div per line so the name line can be bolder or bigger */
+.block .ln{white-space:pre}
+.block.center{transform:translateX(-50%)}
+.divider{position:absolute;border-left:1px solid currentColor;opacity:.55;pointer-events:none}
+.flap{position:absolute;inset:0;pointer-events:none}
+.flap svg{display:block;width:100%;height:100%}
+.flap polyline{fill:none;stroke:rgba(0,0,0,.2);stroke-width:1.5;vector-effect:non-scaling-stroke}
+
+/* Label sheets */
+.stage.sheet-stage{min-height:320px;align-items:flex-start}
+.sheetview{position:relative;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12),0 10px 28px rgba(0,0,0,.2)}
+.label{position:absolute;box-sizing:border-box;display:flex;align-items:center;overflow:hidden}
+.label.outlined{outline:1px dashed rgba(0,0,0,.2);outline-offset:-1px;border-radius:4px}
+.label.used{background:repeating-linear-gradient(45deg,rgba(0,0,0,.06) 0 4px,transparent 4px 9px)}
+.label.over{outline:1.5px solid #c62828}
+.label.placeholder{opacity:.4;font-style:italic}
+.label .ln{white-space:pre}
+
+/* Amber: addresses worth a second look */
+:root{ --caution:#8a5a00; --caution-bg:#fdf3dc; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --caution:#f0c14b; --caution-bg:#3a3020; } }
+:root[data-theme="dark"]{ --caution:#f0c14b; --caution-bg:#3a3020; }
+.caution{display:none;margin-top:8px;padding:8px 10px;border-radius:6px;background:var(--caution-bg);color:var(--caution);font-size:13px;line-height:1.7}
+.caution.show{display:block}
+.caution button{border:0;background:none;padding:0 6px 0 0;color:inherit;text-decoration:underline;font-size:13px}
+.pb-status .chk{color:var(--caution);font-weight:600}
+.strip .thumb.check:not(.active){outline-color:var(--caution)}
+.thumb.check .num{background:#b7791f;color:#fff}
+.thumb.sent::after{content:"✓";position:absolute;left:3px;top:2px;font:700 11px/1 "Segoe UI",sans-serif;color:#2e7d32;background:rgba(255,255,255,.9);border-radius:3px;padding:1px 3px}
+
+/* Card tracker */
+.track-list{max-height:320px;overflow:auto;margin:10px 0;border:1px solid var(--line);border-radius:8px}
+.track-list .hint{margin:10px}
+.track-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--line)}
+.track-row:last-child{border-bottom:0}
+.tr-who{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;border:0;background:none;padding:0;text-align:left}
+.tr-who b,.tr-who span{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-who b{font-weight:600}
+.tr-who span{color:var(--muted);font-size:12px}
+.chip{padding:3px 10px;border-radius:999px;font-size:12px;flex:none}
+.chip.sent[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip.recv[aria-pressed="true"]{background:#2e7d32;color:#fff;border-color:#2e7d32}
+
+/* Small forms: new list, rename, merge households */
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:18px 20px;width:min(440px,calc(100vw - 32px));box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(0,0,0,.35);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+dialog h3{margin:0 0 10px;font-size:16px}
+dialog label.inline{margin:8px 0}
+.dlg-actions{display:flex;flex-direction:row-reverse;gap:8px;margin-top:16px}
+
 @media (prefers-reduced-motion: reduce){
   .sect::details-content,.sect > summary::after,.strip .thumb,.toast{transition:none}
 }
@@ -272,26 +338,73 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   .sheet .outline{position:absolute;inset:0;border:1px dashed #888}
   .sheet .stamp{border-color:#aaa;color:#aaa}
   .sheet .caption{position:absolute;left:.5in;bottom:.4in;font:9pt Arial,sans-serif;color:#555}
+  .sheet .sheetview{box-shadow:none}
+  .sheet .label.outlined{outline:1px dashed #999}
+  .sheet .flap polyline{stroke:#aaa}
 }
 </style>
 </head>
 <body>
 <header>
   <h1>Free Envelope Printer</h1>
-  <span class="tagline">Paste or import addresses, pick a size, drag to place, print.</span>
+  <span class="tagline">Envelopes, postcards and address labels. Paste a list, pick a size, print.</span>
   <span class="privacy">🔒 Your addresses never leave your browser. No signup, no upload.</span>
+  <button id="installBtn" class="icon-btn" type="button" hidden title="Install as an app: its own window, works offline">⤓ Install app</button>
   <button id="themeBtn" class="icon-btn" type="button"></button>
 </header>
 
 <main>
   <div class="sidebar">
     <details class="panel sect" data-sect="envelope">
-      <summary><h2>Envelope</h2><span class="meta"></span></summary>
+      <summary><h2>Print on</h2><span class="meta"></span></summary>
       <div class="body">
-      <select id="size" data-key="size" aria-label="Envelope size"></select>
-      <div class="row" id="customRow" hidden>
-        <div><label for="customW">Width (in)</label><input id="customW" data-key="customW" type="number" step="0.125" min="1"></div>
-        <div><label for="customH">Height (in)</label><input id="customH" data-key="customH" type="number" step="0.125" min="1"></div>
+      <div class="seg full" role="group" aria-label="What to print on">
+        <button type="button" data-set="mode" data-val="envelope">Envelopes</button>
+        <button type="button" data-set="mode" data-val="postcard">Postcards</button>
+        <button type="button" data-set="mode" data-val="labels">Labels</button>
+      </div>
+
+      <div id="envCtl">
+        <label for="size">Envelope size</label>
+        <select id="size" data-key="size"></select>
+        <div class="row" id="customRow" hidden>
+          <div><label for="customW">Width (<span class="u">in</span>)</label><input id="customW" data-key="customW" data-len data-step-in="0.125" data-step-mm="1" type="number" min="1"></div>
+          <div><label for="customH">Height (<span class="u">in</span>)</label><input id="customH" data-key="customH" data-len data-step-in="0.125" data-step-mm="1" type="number" min="1"></div>
+        </div>
+      </div>
+
+      <div id="cardCtl" hidden>
+        <label for="cardSize">Postcard size</label>
+        <select id="cardSize" data-key="cardSize"></select>
+        <label class="inline" style="margin-top:10px"><input type="checkbox" data-key="divider"> Draw the divider line between message and address</label>
+        <p class="hint">Prints the address side. 6 × 4¼ in is the largest size that still mails at the postcard rate in the US.</p>
+      </div>
+
+      <div id="labelCtl" hidden>
+        <label for="labelSheet">Label sheet</label>
+        <select id="labelSheet" data-key="labelSheet"></select>
+        <label for="labelWhat">On the labels</label>
+        <select id="labelWhat" data-key="labelWhat">
+          <option value="recipients">Recipients: one address per label</option>
+          <option value="return">My return address: a full sheet of it</option>
+        </select>
+        <div class="row">
+          <div><label for="labelStart">Start at label #</label><input id="labelStart" data-key="labelStart" type="number" min="1" step="1"></div>
+          <div id="returnSheetsBox"><label for="returnSheets">Sheets</label><input id="returnSheets" data-key="returnSheets" type="number" min="1" max="20" step="1"></div>
+        </div>
+        <p class="hint">Half-used sheet? Set the label to start at and the used ones are skipped.</p>
+      </div>
+
+      <div id="paperCtl">
+        <label for="paper">Envelope colour <span class="soft">(preview only)</span></label>
+        <select id="paper" data-key="paper"></select>
+        <p class="hint" id="paperNote" hidden>Home printers can't print white ink, and dark ink won't show on a dark envelope. Consider light-coloured labels.</p>
+      </div>
+
+      <label for="units">Measurements</label>
+      <div class="seg" role="group" aria-label="Units">
+        <button type="button" data-set="units" data-val="in">Inches</button>
+        <button type="button" data-set="units" data-val="mm">Millimetres</button>
       </div>
       </div>
     </details>
@@ -299,6 +412,17 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
     <details class="panel sect" data-sect="recipients">
       <summary><h2>Recipients</h2><span class="meta"></span></summary>
       <div class="body">
+      <div class="list-row">
+        <select id="listSel" aria-label="Address list"></select>
+        <button id="listNew" class="tool tip" data-tip="New list" aria-label="New list">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button id="listDup" class="tool tip" data-tip="New list from this one" aria-label="New list from this one">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h11v11H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></button>
+        <button id="listRename" class="tool tip" data-tip="Rename list" aria-label="Rename list">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button id="listDel" class="tool tip danger-tool" data-tip="Delete list" aria-label="Delete list">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
       <textarea id="recipients" data-key="recipients" rows="11" placeholder="Jane Doe&#10;123 Main Street&#10;Springfield, IL 62701&#10;&#10;John Smith&#10;456 Oak Avenue, Apt 2&#10;Riverside, CA 92501"></textarea>
       <div class="icon-row" role="toolbar" aria-label="Address list tools">
         <button id="importBtn" class="tool tip" data-tip="Import a spreadsheet (CSV)" aria-label="Import a spreadsheet (CSV)">
@@ -307,12 +431,14 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h8M12 13v4"/></svg></button>
         <button id="tidyBtn" class="tool tip" data-tip="Tidy up: capitals, abbreviations, duplicates" aria-label="Tidy up the list">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3l1.9 4.6L17.5 9.5l-4.6 1.9L11 16l-1.9-4.6L4.5 9.5l4.6-1.9zM18.5 14l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg></button>
+        <button id="householdBtn" class="tool tip" data-tip="Merge people at the same address" aria-label="Merge people at the same address into one envelope">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></button>
         <span class="icon-sep" aria-hidden="true"></span>
         <button id="clearBtn" class="tool tip danger-tool" data-tip="Clear the list" aria-label="Clear the list">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg></button>
       </div>
       <input type="file" id="importFile" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" hidden>
-      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. Columns named Name, Address, City, State and ZIP are recognized and put in the right order. The buttons above: import a CSV, get a ready-made spreadsheet template, ✨ tidy up the list, or clear it. Hover one to see what it does.</p>
+      <p class="hint">Leave a blank line between addresses, or paste cells straight from Excel or Google Sheets. The buttons: import a CSV, get a spreadsheet template, ✨ tidy up, merge people who share an address, or clear the list. Keep separate lists (Christmas cards, wedding guests…) with the menu above.</p>
       </div>
     </details>
 
@@ -321,6 +447,17 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
       <div class="body">
       <label class="inline"><input type="checkbox" data-key="printReturn"> Print a return address</label>
       <textarea data-key="returnText" rows="4" placeholder="Your Name&#10;789 Elm Street&#10;Springfield, IL 62704" aria-label="Return address" style="margin-top:8px"></textarea>
+      <div id="returnWhereBox">
+        <label for="returnWhere">Where</label>
+        <select id="returnWhere" data-key="returnWhere">
+          <option value="front">Front, top-left corner</option>
+          <option value="back">Back flap (wedding style)</option>
+        </select>
+        <div id="backBox" hidden>
+          <p class="hint">Print the fronts first, then flip the envelopes over and print the back flaps. Use <b>Front / Back</b> above the preview to place it.</p>
+          <button id="printBacks" style="margin-top:8px">Print back flaps</button>
+        </div>
+      </div>
       </div>
     </details>
 
@@ -329,7 +466,7 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
       <div class="body">
       <div id="logoEmpty">
         <button id="logoPick">Choose an image…</button>
-        <p class="hint">PNG, JPG or SVG. You can also drop an image onto the envelope preview.</p>
+        <p class="hint">PNG, JPG or SVG. You can also drop an image onto the preview. On return-address labels it sits beside the text.</p>
       </div>
       <div id="logoSet" hidden>
         <div class="logo-row">
@@ -338,8 +475,8 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
           <button id="logoReplace">Replace</button>
           <button id="logoRemove">Remove</button>
         </div>
-        <label for="logoW">Width (in)</label>
-        <input id="logoW" data-key="logoW" type="number" min="0.2" step="0.05">
+        <label for="logoW">Width (<span class="u">in</span>)</label>
+        <input id="logoW" data-key="logoW" data-len data-step-in="0.05" data-step-mm="1" type="number" min="0.2">
         <label class="inline" style="margin-top:10px"><input type="checkbox" data-key="logoGray"> Print in black &amp; white</label>
       </div>
       <input type="file" id="logoFile" accept="image/*" hidden>
@@ -360,10 +497,10 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
         <option value="flowers">Flowers · spring</option>
       </select>
       <div id="decoSize" hidden>
-        <label for="decoW">Width (in)</label>
-        <input id="decoW" data-key="decoW" type="number" min="0.3" step="0.05">
+        <label for="decoW">Width (<span class="u">in</span>)</label>
+        <input id="decoW" data-key="decoW" data-len data-step-in="0.05" data-step-mm="1" type="number" min="0.3">
       </div>
-      <p class="hint">Printed in colour on the envelope. Drag it anywhere, or pull its corner to resize.</p>
+      <p class="hint">Printed in colour on envelopes and postcards. Drag it anywhere, or pull its corner to resize.</p>
       </div>
     </details>
 
@@ -372,10 +509,27 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
       <div class="body">
       <label for="font">Font</label>
       <select id="font" data-key="font"></select>
-      <div class="row">
-        <div><label for="rcpPt">Address size (pt)</label><input id="rcpPt" data-key="rcpPt" type="number" min="6" max="36" step="0.5"></div>
+      <div class="row" id="envSizes">
+        <div><label for="rcpPt">Address size (pt)</label><input id="rcpPt" data-key="rcpPt" type="number" min="6" max="48" step="0.5"></div>
         <div><label for="retPt">Return size (pt)</label><input id="retPt" data-key="retPt" type="number" min="6" max="36" step="0.5"></div>
       </div>
+      <div id="labelSizeBox" hidden>
+        <label for="labelPt">Label text size (pt)</label>
+        <input id="labelPt" data-key="labelPt" type="number" min="6" max="24" step="0.5">
+        <p class="hint">Long addresses shrink automatically to fit their label.</p>
+      </div>
+      <div class="row">
+        <div><label for="align">Alignment</label>
+          <select id="align" data-key="align"><option value="left">Left</option><option value="center">Centred (invitations)</option></select></div>
+        <div><label for="spacing">Line spacing</label>
+          <select id="spacing" data-key="spacing"><option value="1">Tight</option><option value="1.2">Normal</option><option value="1.4">Relaxed</option><option value="1.65">Airy</option></select></div>
+      </div>
+      <div class="row">
+        <div><label class="inline" style="margin-top:14px"><input type="checkbox" data-key="nameBold"> Bold name line</label></div>
+        <div><label for="namePlus">Name line bigger by (pt)</label><input id="namePlus" data-key="namePlus" type="number" min="0" max="12" step="1"></div>
+      </div>
+      <label for="ink">Ink colour</label>
+      <select id="ink" data-key="ink"></select>
       <label class="inline" style="margin-top:12px"><input type="checkbox" data-key="caps"> ALL CAPS (what the post office prefers)</label>
       </div>
     </details>
@@ -383,27 +537,33 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
     <details class="panel sect" data-sect="printer">
       <summary><h2>Printer adjustments</h2><span class="meta"></span></summary>
       <div class="body">
-      <p class="hint" style="margin-top:0">These only affect printing, not the preview. Set them once for your printer after a test envelope.</p>
+      <p class="hint" style="margin-top:0">These only affect printing, not the preview. Set them once for your printer after a test print.</p>
       <div class="row">
-        <div><label for="nudgeX">Nudge right (in)</label><input id="nudgeX" data-key="nudgeX" type="number" step="0.05"></div>
-        <div><label for="nudgeY">Nudge down (in)</label><input id="nudgeY" data-key="nudgeY" type="number" step="0.05"></div>
+        <div><label for="nudgeX">Nudge right (<span class="u">in</span>)</label><input id="nudgeX" data-key="nudgeX" data-len data-step-in="0.05" data-step-mm="0.5" type="number"></div>
+        <div><label for="nudgeY">Nudge down (<span class="u">in</span>)</label><input id="nudgeY" data-key="nudgeY" data-len data-step-in="0.05" data-step-mm="0.5" type="number"></div>
       </div>
-      <label for="rotate">Rotate for printer</label>
+      <label for="rotate">Rotate envelopes for printer</label>
       <select id="rotate" data-key="rotate">
         <option value="0">None</option>
         <option value="90">90° clockwise</option>
         <option value="180">180° (upside down)</option>
         <option value="270">90° counter-clockwise</option>
       </select>
-      <p class="hint">Negative nudge moves left / up. Nudge shows on the plain-paper test sheet too; rotation only applies to real envelopes. If an envelope comes out sideways or upside down, try a rotation.</p>
+      <label class="inline" style="margin-top:10px" id="backFlipBox" hidden><input type="checkbox" data-key="backFlip"> Turn back flaps upside down</label>
+      <p class="hint">Negative nudge moves left / up. Nudge applies to envelopes, labels and test sheets; rotation only to real envelopes and postcards.</p>
       </div>
     </details>
 
     <details class="panel sect" data-sect="reset">
-      <summary><h2>Start over</h2><span class="meta"></span></summary>
+      <summary><h2>Backup &amp; reset</h2><span class="meta"></span></summary>
       <div class="body">
-      <button id="resetAll" class="danger">Reset everything</button>
-      <p class="hint">Clears your addresses, return address and logo, and puts every setting, placement and printer adjustment back to its default.</p>
+      <div class="btn-row" style="margin-top:0">
+        <button id="backupBtn">Back up everything</button>
+        <button id="restoreBtn">Restore…</button>
+      </div>
+      <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+      <p class="hint">Everything lives only in this browser. A backup file keeps your lists, marks, logo and settings safe, and moves them to another computer.</p>
+      <button id="resetAll" class="danger" style="margin-top:10px">Reset everything</button>
       </div>
     </details>
   </div>
@@ -413,34 +573,58 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
     <section class="panel">
       <div class="toolbar">
         <div class="nav">
-          <button id="prev" aria-label="Previous address" title="Previous (←)">‹</button>
+          <button id="prev" aria-label="Previous" title="Previous (←)">‹</button>
           <span id="navLabel"></span>
-          <button id="next" aria-label="Next address" title="Next (→)">›</button>
+          <button id="next" aria-label="Next" title="Next (→)">›</button>
         </div>
         <span class="hint" id="sizeReadout" style="margin:0"></span>
         <span class="spacer"></span>
+        <div class="seg" id="sideSeg" role="group" aria-label="Which side" hidden>
+          <button type="button" data-set="view" data-val="front">Front</button>
+          <button type="button" data-set="view" data-val="back">Back</button>
+        </div>
         <button id="reset">Reset placement</button>
       </div>
       <div class="stage" id="stage"></div>
       <div class="strip" id="strip" hidden aria-label="All envelopes"></div>
-      <div class="pos">
-        <div><label for="rcpX">Address from left</label><input id="rcpX" type="number" step="0.05"></div>
-        <div><label for="rcpY">Address from top</label><input id="rcpY" type="number" step="0.05"></div>
-        <div><label for="retX">Return from left</label><input id="retX" type="number" step="0.05"></div>
-        <div><label for="retY">Return from top</label><input id="retY" type="number" step="0.05"></div>
-        <div id="logoPosX" hidden><label for="logoX">Logo from left</label><input id="logoX" type="number" step="0.05"></div>
-        <div id="logoPosY" hidden><label for="logoY">Logo from top</label><input id="logoY" type="number" step="0.05"></div>
+      <div class="pos" id="posGrid">
+        <div id="rcpPosX"><label for="rcpX">Address from left (<span class="u">in</span>)</label><input id="rcpX" type="number" data-step-in="0.05" data-step-mm="1"></div>
+        <div id="rcpPosY"><label for="rcpY">Address from top (<span class="u">in</span>)</label><input id="rcpY" type="number" data-step-in="0.05" data-step-mm="1"></div>
+        <div><label for="retX">Return from left (<span class="u">in</span>)</label><input id="retX" type="number" data-step-in="0.05" data-step-mm="1"></div>
+        <div><label for="retY">Return from top (<span class="u">in</span>)</label><input id="retY" type="number" data-step-in="0.05" data-step-mm="1"></div>
+        <div id="logoPosX" hidden><label for="logoX">Logo from left (<span class="u">in</span>)</label><input id="logoX" type="number" data-step-in="0.05" data-step-mm="1"></div>
+        <div id="logoPosY" hidden><label for="logoY">Logo from top (<span class="u">in</span>)</label><input id="logoY" type="number" data-step-in="0.05" data-step-mm="1"></div>
       </div>
-      <p class="hint">Drag anything on the envelope, or click it and use the arrow keys (hold Shift for bigger steps). Drag the logo's corner to resize it. Measurements are in inches. <span class="keys">← → flip through envelopes · <span class="modp">Ctrl+P</span> prints them all.</span></p>
+      <p class="hint" id="dragHint">Drag anything on the envelope, or click it and use the arrow keys (hold Shift for bigger steps). Drag the logo's corner to resize it. With centred alignment, "from left" is the centre of the address. <span class="keys">← → flip through envelopes · <span class="modp">Ctrl+P</span> prints them all.</span></p>
       <div class="warn" id="warn"></div>
+      <div class="caution" id="caution"></div>
     </section>
+
+    <details class="panel sect" data-sect="tracker">
+      <summary><h2>Card tracker</h2><span class="meta"></span></summary>
+      <div class="body">
+        <div class="seg" role="group" aria-label="Show">
+          <button type="button" data-set="trackFilter" data-val="all">All</button>
+          <button type="button" data-set="trackFilter" data-val="unsent">Not sent</button>
+          <button type="button" data-set="trackFilter" data-val="sent">Sent</button>
+          <button type="button" data-set="trackFilter" data-val="received">Received</button>
+        </div>
+        <div class="track-list" id="trackList"></div>
+        <div class="btn-row">
+          <button id="markAllSent">Mark all as sent</button>
+          <button id="clearMarks">Clear marks</button>
+        </div>
+        <label class="inline" style="margin-top:10px"><input type="checkbox" data-key="skipSent"> When printing, skip anyone already marked sent</label>
+        <p class="hint">Marks are saved with each list. Next year, use "New list from this one" and keep only the people who sent you a card.</p>
+      </div>
+    </details>
 
     <section class="panel">
       <h2>Printing tips</h2>
       <ul class="tips">
         <li>In the print dialog, set <b>Margins</b> to <b>None</b> and <b>Scale</b> to <b>Default / 100%</b>, and turn off <b>Headers and footers</b>.</li>
-        <li><b>Test on plain paper</b> prints the envelope outline on a regular sheet. Hold an envelope over it to check the layout.</li>
-        <li>Then feed <b>one</b> real envelope with <b>Print this one</b>. If the text lands off, fix it under <b>Printer adjustments</b>. Those settings are saved.</li>
+        <li><b>Test on plain paper</b> prints the outline on a regular sheet. Hold an envelope (or a label sheet, up to the light) against it to check the layout.</li>
+        <li>Then print <b>one</b> real envelope or sheet. If it lands off, fix it under <b>Printer adjustments</b>. Those settings are saved.</li>
       </ul>
     </section>
 
@@ -448,10 +632,10 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   <h2>How to print addresses on envelopes</h2>
   <ol>
     <li><b>Add your addresses.</b> Type or paste them with a blank line between each one, paste cells from a spreadsheet, or import a CSV file.</li>
-    <li><b>Pick the envelope size.</b> #10 is the standard business envelope. Greeting cards usually use A2, A7 or C6.</li>
-    <li><b>Place things.</b> Drag the address, return address and logo where you want them. The standard layout is already set up.</li>
-    <li><b>Check it on plain paper.</b> <i>Test on plain paper</i> prints an outline you can hold an envelope against.</li>
-    <li><b>Print one real envelope, then the batch.</b> If it lands a little off, fix it once under <i>Printer adjustments</i> and it's remembered.</li>
+    <li><b>Pick what you're printing on.</b> Envelopes, postcards or an Avery-style label sheet. #10 is the standard business envelope; cards usually use A2, A7 or C6.</li>
+    <li><b>Place things.</b> Drag the address, return address, logo and decoration where you want them. The standard layout is already set up.</li>
+    <li><b>Check it on plain paper.</b> <i>Test on plain paper</i> prints an outline you can hold an envelope or label sheet against.</li>
+    <li><b>Print one real envelope, then the batch.</b> If it lands a little off, fix it once under <i>Printer adjustments</i> and it's remembered. Or <i>Save PDF</i> to print later.</li>
   </ol>
 </section>
 
@@ -459,11 +643,23 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   <h2>Questions</h2>
   <details>
     <summary>How do I print envelopes from an Excel or Google Sheets list?</summary>
-    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use the import button (the up-arrow under the address box). Starting from nothing? The template button next to it gives you a spreadsheet with the columns already named: fill in one address per row, save it as CSV, and import it. Its two example rows are skipped automatically. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero in the spreadsheet (2134 instead of 02134) are fixed automatically.</p>
+    <p>Select the cells (including the header row) and paste them into the recipients box, or save the sheet as CSV and use the import button (the up-arrow under the address box). Starting from nothing? The template button next to it gives you a spreadsheet with the columns already named: fill in one address per row, save it as CSV, and import it. Its two example rows are skipped automatically. Columns like First Name, Last Name, Company, Address, Address 2, City, State, ZIP and Country are recognized and assembled into a proper mailing address. ZIP codes that lost their leading zero (2134 instead of 02134) are fixed automatically.</p>
+  </details>
+  <details>
+    <summary>Can I print address labels instead?</summary>
+    <p>Yes. Choose <i>Labels</i> under <i>Print on</i>, then your sheet: Avery 5160 / 8160 (30 per sheet) is the usual address label, and 5167 is the small return-address label. A4 sheets L7160 and L7163 are there too. Long addresses shrink to fit their label, and you can start part-way down a half-used sheet. Pick <i>My return address</i> to fill a whole sheet with return labels, with your logo beside the text if you've added one.</p>
+  </details>
+  <details>
+    <summary>How do I print the return address on the back flap?</summary>
+    <p>Under <i>Return address</i>, set <i>Where</i> to <i>Back flap</i>. Use <i>Front / Back</i> above the preview to place it (it's centred by default). Print the fronts, flip the stack over, and press <i>Print back flaps</i>. If the backs come out upside down, tick <i>Turn back flaps upside down</i> under <i>Printer adjustments</i>.</p>
+  </details>
+  <details>
+    <summary>Can I keep my Christmas card list for next year?</summary>
+    <p>Yes. Keep as many named lists as you like with the menu above the address box. The <i>Card tracker</i> lets you tick who you sent a card to and who sent you one. Next year, choose <i>New list from this one</i> and keep only the people who sent you a card. Use <i>Back up everything</i> now and then; the lists only live in this browser.</p>
   </details>
   <details>
     <summary>Why is the address printing in the wrong spot?</summary>
-    <p>Every printer feeds envelopes a little differently. Print one envelope, measure how far off it is, and enter that under <i>Printer adjustments</i> (a negative number moves left or up). If it comes out sideways or upside down, change <i>Rotate for printer</i>. In the print dialog, set Margins to None and Scale to 100%.</p>
+    <p>Every printer feeds envelopes a little differently. Print one envelope, measure how far off it is, and enter that under <i>Printer adjustments</i> (a negative number moves left or up). If it comes out sideways or upside down, change <i>Rotate envelopes for printer</i>. In the print dialog, set Margins to None and Scale to 100%.</p>
   </details>
   <details>
     <summary>What size is a #10 envelope? Which size do I need?</summary>
@@ -480,32 +676,32 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
     <p>Anything else: choose <i>Custom size</i> and type the width and height.</p>
   </details>
   <details>
-    <summary>Are my addresses uploaded anywhere?</summary>
-    <p>No. This is a single web page that runs entirely in your browser. Your list, return address and logo are only saved in your own browser so they're there next time, and none of it is ever sent anywhere. The page itself loads its fonts from Google Fonts and counts anonymous visits (GoatCounter, no cookies) so we know whether people use it; neither ever sees your addresses.</p>
-  </details>
-  <details>
     <summary>Can I address wedding invitations or holiday cards?</summary>
-    <p>Yes. Pick a script font under <i>Text</i> (Great Vibes, Pinyon Script, Parisienne and others); they read best at 16–20pt. Under <i>Decoration</i> you can add a small flourish such as holly, snowflakes, hearts or flowers. For cards, choose A7 (5×7 invitations), A2 (small cards) or C6.</p>
+    <p>Yes. Pick a script font under <i>Text</i> (Great Vibes, Pinyon Script, Parisienne and others) at 16–20pt, set <i>Alignment</i> to <i>Centred</i>, and choose an ink colour. The merge button next to the address box turns guests who share an address into one envelope ("John and Ann Smith" or "The Smith Family"). Put the return address on the back flap, and add a flourish under <i>Decoration</i>. Envelope colour previews kraft, blush or navy stock.</p>
   </details>
   <details>
     <summary>My list is messy. Can it clean it up?</summary>
-    <p>The ✨ Tidy up button under the address box fixes spacing and all-lowercase names, turns "Street" into "St", "Apartment" into "Apt" and full state names into their two-letter codes, puts the comma in "City, ST ZIP", and removes exact duplicates. It keeps ALL-CAPS lines as they are, and there's an Undo if you don't like the result.</p>
+    <p>The ✨ Tidy up button fixes spacing and all-lowercase names, turns "Street" into "St", "Apartment" into "Apt" and full state names into their two-letter codes, puts the comma in "City, ST ZIP", and removes exact duplicates. It keeps ALL-CAPS lines as they are, and there's an Undo. Addresses that look wrong (a missing ZIP, an unknown state, both a PO Box and a street) are flagged in amber under the preview.</p>
+  </details>
+  <details>
+    <summary>Can I use it offline, like a normal app?</summary>
+    <p>Yes. In Chrome or Edge, press <i>Install app</i> at the top (or use the install icon in the address bar). It opens in its own window and keeps working without internet, fonts included, once they've loaded once.</p>
+  </details>
+  <details>
+    <summary>Are my addresses uploaded anywhere?</summary>
+    <p>No. This is a single web page that runs entirely in your browser. Your lists, return address and logo are only saved in your own browser so they're there next time, and none of it is ever sent anywhere. The page itself loads its fonts from Google Fonts and counts anonymous visits (GoatCounter, no cookies) so we know whether people use it; neither ever sees your addresses.</p>
   </details>
   <details>
     <summary>Which browser should I use?</summary>
-    <p>Chrome or Edge give the most reliable envelope sizing when printing. It works on Windows and Mac.</p>
-  </details>
-  <details>
-    <summary>Can I add a logo?</summary>
-    <p>Yes. Choose an image in the Logo panel or drop one onto the envelope preview, then drag it into place and pull its corner to resize. Tick <i>Print in black &amp; white</i> for a mono printer.</p>
+    <p>Chrome or Edge give the most reliable envelope sizing when printing. It works on Windows and Mac. If a browser won't size the page right, use <i>Save PDF</i> and print the PDF.</p>
   </details>
 </section>
   </div>
   <div class="printbar">
     <span class="pb-status" id="pbStatus"></span>
     <button id="printTest" title="Prints the outline on regular paper so you can check the layout"><span class="long">Test on plain paper</span><span class="short">Test</span></button>
-    <button id="savePdf" title="Download every envelope as one PDF, to print later or from another computer. Uses your printer adjustments."><span class="long">Save PDF</span><span class="short">PDF</span></button>
-    <button id="printOne"><span class="long">Print this one</span><span class="short">This one</span></button>
+    <button id="savePdf" title="Download as one PDF, to print later or from another computer. Uses your printer adjustments."><span class="long">Save PDF</span><span class="short">PDF</span></button>
+    <button id="printOne"><span class="long" id="printOneLabel">Print this one</span><span class="short">This one</span></button>
     <button class="primary" id="printAll">Print all</button>
   </div>
   </div>
@@ -517,11 +713,26 @@ button.danger:hover{border-color:var(--warn);background:var(--warn-bg)}
   <a href="https://buymeacoffee.com/eblank" target="_blank" rel="noopener">☕ Buy me a coffee</a>
 </footer>
 
+<dialog id="dlg">
+  <form method="dialog" id="dlgForm">
+    <h3 id="dlgTitle"></h3>
+    <div id="dlgBody"></div>
+    <div class="dlg-actions">
+      <button value="ok" class="primary" id="dlgOk">OK</button>
+      <button value="cancel" formnovalidate>Cancel</button>
+    </div>
+  </form>
+</dialog>
+
 <div id="toasts" aria-live="polite"></div>
 <div id="measure" aria-hidden="true"></div>
 <div id="printRoot"></div>
 
 <script>
+// ============================================================================
+// Data tables
+// ============================================================================
+
 // Keys are stored in saved settings, so existing ones never change; new sizes get new keys.
 const SIZES = [
   { key:'10',      name:'#10 (business)',        w:9.5,    h:4.125, group:'Business & personal' },
@@ -551,6 +762,25 @@ const SIZES = [
   { key:'c4',      name:'C4 (229 × 324 mm)',     w:12.756, h:9.016, group:'International' },
   { key:'custom',  name:'Custom size…',                             group:'Other' },
 ];
+const CARD_SIZES = [
+  { key:'pc4x6',   name:'4 × 6 postcard',                    w:6,   h:4 },
+  { key:'pc425x6', name:'4¼ × 6 (largest US postcard rate)', w:6,   h:4.25 },
+  { key:'pc5x7',   name:'5 × 7 card',                        w:7,   h:5 },
+  { key:'pc55x85', name:'5½ × 8½ card',                      w:8.5, h:5.5 },
+  { key:'pcA6',    name:'A6 postcard (105 × 148 mm)',        w:5.827, h:4.134 },
+];
+const PAGES = { letter:{ w:8.5, h:11, name:'Letter' }, a4:{ w:8.268, h:11.693, name:'A4' } };
+// Label sheet geometry in inches: label size, first label's top-left, and the step between labels.
+const LABEL_SHEETS = [
+  { key:'5160',  name:'Avery 5160 / 8160 · 30 per sheet · 1 × 2⅝ in',   page:'letter', cols:3, rows:10, w:2.625,  h:1,      top:0.5,    left:0.1875,  hp:2.75,   vp:1 },
+  { key:'5161',  name:'Avery 5161 / 8161 · 20 per sheet · 1 × 4 in',     page:'letter', cols:2, rows:10, w:4,      h:1,      top:0.5,    left:0.15625, hp:4.1875, vp:1 },
+  { key:'5162',  name:'Avery 5162 / 8162 · 14 per sheet · 1⅓ × 4 in',   page:'letter', cols:2, rows:7,  w:4,      h:1.3333, top:0.8333, left:0.15625, hp:4.1875, vp:1.3333 },
+  { key:'5163',  name:'Avery 5163 / 8163 · 10 per sheet · 2 × 4 in',     page:'letter', cols:2, rows:5,  w:4,      h:2,      top:0.5,    left:0.15625, hp:4.1875, vp:2 },
+  { key:'5164',  name:'Avery 5164 / 8164 · 6 per sheet · 3⅓ × 4 in',     page:'letter', cols:2, rows:3,  w:4,      h:3.3333, top:0.5,    left:0.15625, hp:4.1875, vp:3.3333 },
+  { key:'5167',  name:'Avery 5167 / 8167 · 80 per sheet · return address', page:'letter', cols:4, rows:20, w:1.75, h:0.5,    top:0.5,    left:0.28125, hp:2.0625, vp:0.5 },
+  { key:'L7160', name:'Avery L7160 (A4) · 21 per sheet · 63.5 × 38.1 mm', page:'a4',    cols:3, rows:7,  w:2.5,    h:1.5,    top:0.5965, left:0.2854,  hp:2.6,    vp:1.5 },
+  { key:'L7163', name:'Avery L7163 (A4) · 14 per sheet · 99.1 × 38.1 mm', page:'a4',    cols:2, rows:7,  w:3.9016, h:1.5,    top:0.5965, left:0.1831,  hp:4,      vp:1.5 },
+];
 // [menu name, CSS font-family, menu group]. The Script and Elegant faces load from Google Fonts.
 const FONTS = [
   ['Arial',               'Arial, Helvetica, sans-serif',              'Everyday'],
@@ -574,36 +804,93 @@ const FONTS = [
   ['Sacramento',          'Sacramento, cursive',                       'Script'],
 ];
 const isScript = css => (FONTS.find(f => f[1] === css) || [])[2] === 'Script';
+const INKS = [
+  { key:'black',    name:'Black',          c:'#111111' },
+  { key:'charcoal', name:'Charcoal',       c:'#3a3a3a' },
+  { key:'navy',     name:'Navy',           c:'#1f2f5c' },
+  { key:'forest',   name:'Forest green',   c:'#1f4d33' },
+  { key:'burgundy', name:'Burgundy',       c:'#6b1d2a' },
+  { key:'brown',    name:'Chocolate',      c:'#4a2f1b' },
+  { key:'gold',     name:'Antique gold',   c:'#8a6d23' },
+];
+const PAPERS = [
+  { key:'white', name:'White',      c:'#fffdf8' },
+  { key:'ivory', name:'Ivory',      c:'#f8f1df' },
+  { key:'kraft', name:'Kraft',      c:'#c8a57a' },
+  { key:'blush', name:'Blush',      c:'#f2d8d2' },
+  { key:'sage',  name:'Sage',       c:'#cdd8c4' },
+  { key:'sky',   name:'Sky',        c:'#d3e1ee' },
+  { key:'grey',  name:'Dove grey',  c:'#cfcfcc' },
+  { key:'navy',  name:'Navy',       c:'#243252', dark:true },
+  { key:'black', name:'Black',      c:'#1d1d1d', dark:true },
+];
+const inkColor = () => (INKS.find(i => i.key === state.ink) || INKS[0]).c;
+const paper = () => PAPERS.find(p => p.key === state.paper) || PAPERS[0];
+
 // Shown in the address spot until there's a real address. Test sheets print it as-is.
 const EMPTY = ['Recipient name', 'Street address', 'City, ST ZIP'];
 const KEY = 'envelopePrint.v1';
 const MODP = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘P' : 'Ctrl+P';
 
+// ============================================================================
+// State
+// ============================================================================
+
 const DEFAULTS = {
-  size:'10', customW:9.5, customH:4.125,
-  recipients:'', returnText:'', printReturn:true,
+  mode:'envelope', size:'10', customW:9.5, customH:4.125, cardSize:'pc4x6', divider:true,
+  labelSheet:'5160', labelWhat:'recipients', labelStart:1, returnSheets:1, labelPt:11, labelPage:0,
+  recipients:'', returnText:'', printReturn:true, returnWhere:'front', view:'front', backFlip:false,
   font:FONTS[0][1], rcpPt:12, retPt:10, caps:false,
+  align:'left', spacing:'1.2', nameBold:false, namePlus:0, ink:'black', paper:'white', units:'in',
   nudgeX:0, nudgeY:0, rotate:'0',
   logo:null, logoW:1, logoGray:false,
   deco:'none', decoW:1,
   theme:'auto',
+  lists:null, listId:null, skipSent:false, trackFilter:'all',
   positions:{}, idx:0,
   // which settings sections are open; the set-once ones start closed
-  open:{ envelope:true, recipients:true, return:true, logo:false, deco:false, text:false, printer:false, reset:false },
+  open:{ envelope:true, recipients:true, return:true, logo:false, deco:false, text:false, printer:false, reset:false, tracker:false },
 };
 const state = Object.assign({}, DEFAULTS, load());
 state.open = Object.assign({}, DEFAULTS.open, state.open);
+// Saved lists arrived later: fold an older single list into the first named one.
+if (!Array.isArray(state.lists) || !state.lists.length) {
+  state.lists = [{ id:uid(), name:'My list', text:state.recipients || '', marks:{} }];
+  state.listId = state.lists[0].id;
+}
+if (!state.lists.some(l => l.id === state.listId)) state.listId = state.lists[0].id;
+state.recipients = curList().text;
 
+function uid(){ return Math.random().toString(36).slice(2, 10); }
+function curList(){ return state.lists.find(l => l.id === state.listId) || state.lists[0]; }
 function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); return true; } catch { return false; } }
+function save(){
+  // Only ever write the box into the list it belongs to; never into a fallback list.
+  const L = state.lists.find(l => l.id === state.listId);
+  if (L) L.text = state.recipients;
+  try { localStorage.setItem(KEY, JSON.stringify(state)); return true; } catch { return false; }
+}
+
+// ============================================================================
+// Small helpers
+// ============================================================================
 
 const $ = s => document.querySelector(s);
 const div = cls => { const d = document.createElement('div'); if (cls) d.className = cls; return d; };
 const round2 = v => Math.round(v * 100) / 100;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const fmt = v => String(+(+v).toFixed(3));
+const n1 = v => +v.toFixed(1);
 const plural = (n, word, many = word + 's') => `${n} ${n === 1 ? word : many}`;
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+// Lengths are stored in inches; the mm setting only changes what you see and type.
+const MM = 25.4;
+const isMM = () => state.units === 'mm';
+const fromU = v => isMM() ? v / MM : v;
+const fmtU = v => isMM() ? String(+(v * MM).toFixed(1)) : fmt(v);
+const dimsText = (w, h) => isMM() ? `${Math.round(w * MM)} × ${Math.round(h * MM)} mm` : `${fmt(w)} × ${fmt(h)} in`;
 
 // action: { label, fn } adds a button to the toast (e.g. Undo).
 function toast(msg, { warn = false, ms = 3200, action = null } = {}){
@@ -627,38 +914,93 @@ function toast(msg, { warn = false, ms = 3200, action = null } = {}){
   setTimeout(dismiss, ms);
 }
 
+// A small modal form. Resolves to the form's values, or null if cancelled.
+function ask({ title, body, ok = 'OK' }){
+  const dlg = $('#dlg');
+  $('#dlgTitle').textContent = title;
+  $('#dlgBody').innerHTML = body;
+  $('#dlgOk').textContent = ok;
+  dlg.returnValue = '';
+  dlg.showModal();
+  dlg.querySelector('#dlgBody input:not([type=radio]), #dlgBody select')?.select?.();
+  // Answer on the form's submit (immediate, and it knows which button was pressed); the dialog's
+  // close event covers Esc. Browsers can hold back close events for a page in the background,
+  // so it's the fallback rather than the main signal.
+  const form = $('#dlgForm');
+  return new Promise(res => {
+    let done = false;
+    const values = () => Object.fromEntries(new FormData(form));
+    const finish = v => {
+      if (done) return;
+      done = true;
+      form.removeEventListener('submit', onSubmit);
+      dlg.removeEventListener('close', onClose);
+      res(v);
+    };
+    const onSubmit = e => finish(e.submitter?.value === 'ok' ? values() : null);
+    const onClose = () => finish(dlg.returnValue === 'ok' ? values() : null);
+    form.addEventListener('submit', onSubmit);
+    dlg.addEventListener('close', onClose);
+  });
+}
+
+// ============================================================================
+// Sizes, modes and positions
+// ============================================================================
+
+const isLabels = () => state.mode === 'labels';
+const isCard = () => state.mode === 'postcard';
 function dims(){
+  if (isCard()) { const c = CARD_SIZES.find(s => s.key === state.cardSize) || CARD_SIZES[0]; return { w:c.w, h:c.h }; }
   if (state.size === 'custom') return { w: Math.max(1, +state.customW || 0), h: Math.max(1, +state.customH || 0) };
   const s = SIZES.find(s => s.key === state.size) || SIZES[0];
   return { w: s.w, h: s.h };
 }
-function sizeName(){ return (SIZES.find(s => s.key === state.size) || SIZES[0]).name.replace('…',''); }
-function posKey(){ const { w, h } = dims(); return state.size === 'custom' ? `custom:${w}x${h}` : state.size; }
+function sizeName(){
+  if (isLabels()) return labelSheet().name.split(' · ')[0];
+  if (isCard()) return (CARD_SIZES.find(s => s.key === state.cardSize) || CARD_SIZES[0]).name;
+  return (SIZES.find(s => s.key === state.size) || SIZES[0]).name.replace('…', '');
+}
+function posKey(){
+  const { w, h } = dims();
+  if (isCard()) return 'card:' + state.cardSize;
+  return state.size === 'custom' ? `custom:${w}x${h}` : state.size;
+}
+const centered = () => state.align === 'center';
+// Left-aligned and centred addresses keep separate positions: for centred ones x is the centre.
+const rcpKey = () => centered() ? 'rcpC' : 'rcp';
+
 function getPos(){
   const k = posKey();
+  const { w, h } = dims();
   if (!state.positions[k]) {
-    const { w, h } = dims();
-    state.positions[k] = { ret:{ x:0.3, y:0.3 }, rcp:{ x:round2(w * 0.42), y:round2(h * 0.48) } };
+    state.positions[k] = isCard()
+      ? { ret:{ x:0.3, y:0.3 }, rcp:{ x:round2(w * 0.56), y:round2(h * 0.44) } }
+      : { ret:{ x:0.3, y:0.3 }, rcp:{ x:round2(w * 0.42), y:round2(h * 0.48) } };
   }
   const p = state.positions[k];
+  if (!p.rcpC) p.rcpC = { x:round2(isCard() ? w * 0.75 : w / 2), y:round2(h * 0.42) };
+  if (!p.back) p.back = { x:round2(w / 2), y:round2(h * 0.16) };
   // The logo takes the top-left corner; slide an untouched return address over to make room.
   if (state.logo && !p.logo) {
     p.logo = { x:0.3, y:0.3 };
     if (p.ret.x < 0.35 && p.ret.y < 0.35) { p.ret.x = round2(0.3 + (+state.logoW || 1) + 0.15); p.retShifted = true; }
   }
   // A flourish starts in the bottom-left corner, clear of the addresses and the postal barcode area.
-  if (state.deco !== 'none' && !p.deco) {
-    const { h } = dims();
-    p.deco = { x:0.3, y:round2(Math.max(0, h - decoH() - 0.3)) };
-  }
+  if (state.deco !== 'none' && !p.deco) p.deco = { x:0.3, y:round2(Math.max(0, h - decoH() - 0.3)) };
   return p;
 }
 const logoH = () => state.logo ? (+state.logoW || 1) * state.logo.h / state.logo.w : 0;
+const returnLines = () => (state.returnText || '').split('\n').map(s => s.trim()).filter(Boolean);
+const returnOnFront = () => state.printReturn && state.returnWhere !== 'back';
+const backMode = () => state.printReturn && state.returnWhere === 'back' && !isLabels();
 
-// ---- Seasonal flourishes: small vector drawings on a 120 x 60 canvas ----
+// ============================================================================
+// Seasonal flourishes: small vector drawings on a 120 x 60 canvas
+// ============================================================================
+
 const DECO_RATIO = 0.5;
 const decoH = () => (+state.decoW || 1) * DECO_RATIO;
-const n1 = v => +v.toFixed(1);
 const star = (cx, cy, r, fill) => {
   const pts = [];
   for (let i = 0; i < 10; i++) {
@@ -701,6 +1043,10 @@ const DECOS = {
 };
 const decoSVG = key => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">${DECOS[key]()}</svg>`;
 
+// ============================================================================
+// Logo
+// ============================================================================
+
 function loadLogo(file){
   if (!file || !file.type.startsWith('image/')) { toast('That file isn’t an image. Try a PNG, JPG or SVG.', { warn:true }); return; }
   const url = URL.createObjectURL(file);
@@ -716,7 +1062,6 @@ function loadLogo(file){
     URL.revokeObjectURL(url);
     state.logo = { src:c.toDataURL('image/png'), w:c.width, h:c.height };
     state.logoW = round2(Math.min(1.2, 0.9 * c.width / c.height));  // at most 1.2" wide or 0.9" tall
-    $('#logoW').value = fmt(state.logoW);
     if (save()) toast('Logo added. Drag it into place, or pull its corner to resize.');
     else toast('Logo added, but it’s too big to remember after you close the page. It will print fine now.', { warn:true, ms:6000 });
     state.open.logo = true;
@@ -738,6 +1083,10 @@ function removeLogo(){
   render();
 }
 
+// ============================================================================
+// Reading address lists
+// ============================================================================
+
 // Blank-line separated blocks, or tab-separated rows pasted from a spreadsheet.
 function parseRecipients(text){
   text = (text || '').replace(/\r/g, '');
@@ -750,10 +1099,10 @@ function fixZip(zip){
   const m = /^(\d{3,5})(-\d{4})?$/.exec(zip);
   return m ? m[1].padStart(5, '0') + (m[2] || '') : zip;
 }
-function cityLine(city, state, zip){
-  const st = /^[a-z]{2}$/i.test(state) ? state.toUpperCase() : state;
-  const z = /^[A-Z]{2}$/.test(st) || !st ? fixZip(zip) : zip;
-  return [city && st ? city + ',' : city, st, z].filter(Boolean).join(' ');
+function cityLine(city, st, zip){
+  const s = /^[a-z]{2}$/i.test(st) ? st.toUpperCase() : st;
+  const z = /^[A-Z]{2}$/.test(s) || !s ? fixZip(zip) : zip;
+  return [city && s ? city + ',' : city, s, z].filter(Boolean).join(' ');
 }
 
 const COLUMNS = [                          // checked in order; first matching header wins each field
@@ -841,19 +1190,57 @@ function templateCSV(){
   return '﻿' + TEMPLATE.map(r => r.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 
-function downloadTemplate(){
-  const url = URL.createObjectURL(new Blob([templateCSV()], { type:'text/csv;charset=utf-8' }));
+function download(blob, name){
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'envelope-addresses-template.csv';
+  a.download = name;
   document.body.append(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function downloadTemplate(){
+  download(new Blob([templateCSV()], { type:'text/csv;charset=utf-8' }), 'envelope-addresses-template.csv');
   toast('Template downloaded. Put one address per row under the headings, save as CSV, then import it here.', { ms:6000 });
 }
 
-// ---- Tidy up: postal-style cleanup of the address list ----
+function importFile(file){
+  if (!file) return;
+  if (/\.(xlsx?|numbers|ods)$/i.test(file.name)) {
+    toast('Save the sheet as CSV first (File › Save As › CSV), or just copy the cells and paste them in.', { warn:true, ms:7000 });
+    return;
+  }
+  file.text().then(text => {
+    const all = rowsToAddresses(parseDelimited(text));
+    const found = all.filter(a => !TEMPLATE_EXAMPLES.has(a.join('\n')));
+    const skipped = all.length - found.length;
+    if (!found.length) {
+      toast(skipped ? 'That’s still just the template’s example rows. Add your own addresses under the headings.'
+                    : `Couldn’t find any addresses in ${file.name}.`, { warn:true, ms:6000 });
+      return;
+    }
+    if (list.length && !confirm(`Replace the ${plural(list.length, 'address', 'addresses')} already in “${curList().name}”?`)) return;
+    setRecipients(found.map(a => a.join('\n')).join('\n\n'));
+    celebrateFit = true;
+    toast(`Imported ${plural(found.length, 'address', 'addresses')} from ${file.name}.` +
+          (skipped ? ` Skipped the template’s ${plural(skipped, 'example row')}.` : ''));
+  });
+}
+
+function setRecipients(text){
+  state.recipients = text;
+  state.idx = 0;
+  $('#recipients').value = text;
+  save();
+  render();
+}
+
+// ============================================================================
+// Tidy up: postal-style cleanup of the address list
+// ============================================================================
+
 const SUFFIX = { street:'St', avenue:'Ave', road:'Rd', drive:'Dr', boulevard:'Blvd', lane:'Ln', court:'Ct', place:'Pl',
   terrace:'Ter', circle:'Cir', parkway:'Pkwy', highway:'Hwy', square:'Sq', trail:'Trl', expressway:'Expy', freeway:'Fwy',
   crossing:'Xing', heights:'Hts', center:'Ctr', centre:'Ctr', plaza:'Plz', alley:'Aly', cove:'Cv', mountain:'Mtn' };
@@ -866,7 +1253,7 @@ const STATES = { alabama:'AL', alaska:'AK', arizona:'AZ', arkansas:'AR', califor
   'new jersey':'NJ', 'new mexico':'NM', 'new york':'NY', 'north carolina':'NC', 'north dakota':'ND', ohio:'OH', oklahoma:'OK',
   oregon:'OR', pennsylvania:'PA', 'rhode island':'RI', 'south carolina':'SC', 'south dakota':'SD', tennessee:'TN', texas:'TX',
   utah:'UT', vermont:'VT', virginia:'VA', washington:'WA', 'west virginia':'WV', wisconsin:'WI', wyoming:'WY', 'puerto rico':'PR' };
-const STATE_CODES = new Set(Object.values(STATES));
+const STATE_CODES = new Set([...Object.values(STATES), 'AA', 'AE', 'AP', 'GU', 'VI', 'AS', 'MP']);
 
 const isAllCaps = s => /[A-Z]/.test(s) && s === s.toUpperCase();
 const isAllLower = s => /[a-z]/.test(s) && s === s.toLowerCase();
@@ -923,6 +1310,10 @@ function tidyBlock(lines){
   });
 }
 
+function withUndo(before, msg){
+  toast(msg, { ms:8000, action:{ label:'Undo', fn:() => setRecipients(before) } });
+}
+
 function tidyUp(){
   const before = state.recipients;
   const blocks = parseRecipients(before);
@@ -940,49 +1331,249 @@ function tidyUp(){
   }
   const after = out.map(a => a.join('\n')).join('\n\n');
   if (!changed && !dupes && after === before.trim()) { toast('✨ Already tidy. Nothing to change.'); return; }
-  state.recipients = after;
-  $('#recipients').value = after;
+  setRecipients(after);
+  const parts = [changed ? `tidied ${plural(changed, 'address', 'addresses')}` : '', dupes ? `removed ${plural(dupes, 'duplicate')}` : ''].filter(Boolean);
+  withUndo(before, parts.length ? '✨ ' + parts.join(' · ').replace(/^./, c => c.toUpperCase()) : '✨ Tidied the list layout');
+}
+
+// ============================================================================
+// Households: people who share an address become one envelope
+// ============================================================================
+
+const addrKey = lines => lines.slice(1).join('\n').toLowerCase().replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
+const splitName = n => { const t = n.trim().split(/\s+/); return { first:t.slice(0, -1).join(' '), last:t[t.length - 1] || '' }; };
+const joinAnd = parts => parts.length < 2 ? parts[0] : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+
+function combineNames(names, style){
+  const parsed = names.map(splitName);
+  const sameLast = parsed.every(p => p.last && p.last.toLowerCase() === parsed[0].last.toLowerCase()) && parsed.every(p => p.first);
+  if (style === 'family' && sameLast) return `The ${parsed[0].last} Family`;
+  if (sameLast) return `${joinAnd(parsed.map(p => p.first))} ${parsed[0].last}`;
+  return joinAnd(names);
+}
+
+function householdGroups(blocks){
+  const groups = new Map();
+  blocks.forEach(b => {
+    const k = b.length > 1 ? addrKey(b) : '\u0000' + b.join('\n');
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(b);
+  });
+  return [...groups.values()];
+}
+
+async function mergeHouseholds(){
+  const blocks = parseRecipients(state.recipients);
+  const groups = householdGroups(blocks);
+  const multi = groups.filter(g => g.length > 1);
+  if (!multi.length) { toast('No two people share an address, so there’s nothing to merge.'); return; }
+  const example = multi[0].map(b => b[0]);
+  const res = await ask({
+    title:'Merge people at the same address',
+    ok:`Merge into ${plural(groups.length, 'envelope')}`,
+    body:`<p class="hint" style="margin-top:0">${plural(blocks.length, 'address', 'addresses')} become ${plural(groups.length, 'envelope')}: ${plural(multi.length, 'household')} share an address.</p>
+      <label class="inline"><input type="radio" name="style" value="names" checked> ${esc(combineNames(example, 'names'))}</label>
+      <label class="inline"><input type="radio" name="style" value="family"> ${esc(combineNames(example, 'family'))}</label>
+      <p class="hint">"The … Family" is used only where everyone shares a last name; otherwise names are listed.</p>`,
+  });
+  if (!res) return;
+  const before = state.recipients;
+  const out = groups.map(g => g.length > 1 ? [combineNames(g.map(b => b[0]), res.style), ...g[0].slice(1)] : g[0]);
+  setRecipients(out.map(b => b.join('\n')).join('\n\n'));
+  withUndo(before, `Merged into ${plural(out.length, 'envelope')}.`);
+}
+
+// ============================================================================
+// Address checks: things the post office might not like
+// ============================================================================
+
+function checkAddress(lines){
+  const issues = [];
+  if (lines.length < 3) issues.push('looks incomplete');
+  if (lines.length > 6) issues.push('too many lines');
+  const last = lines[lines.length - 1] || '';
+  const us = /,?\s*([A-Za-z]{2})\.?\s+(\d{3,5})(?:-\d{4})?\s*$/.exec(last);
+  if (us) {
+    if (!STATE_CODES.has(us[1].toUpperCase())) issues.push(`unknown state “${us[1]}”`);
+    if (us[2].length < 5) issues.push('ZIP looks short');
+  } else if (/,\s*([A-Za-z]{2})\s*$/.test(last) && STATE_CODES.has(last.slice(-2).toUpperCase())) {
+    issues.push('missing ZIP');
+  }
+  const po = lines.some(l => /^p\.?\s*o\.?\s*box\b/i.test(l)), street = lines.some(l => /^\d+\s+\S/.test(l) && !/^\d{5}/.test(l));
+  if (po && street) issues.push('both a PO Box and a street');
+  return issues;
+}
+
+function computeChecks(){
+  const seen = new Map(), out = [];
+  list.forEach((lines, i) => {
+    const issues = checkAddress(lines);
+    const k = lines.join('\n').toLowerCase();
+    if (seen.has(k)) issues.push(`same as #${seen.get(k) + 1}`); else seen.set(k, i);
+    if (issues.length) out.push({ i, issues });
+  });
+  return out;
+}
+
+// ============================================================================
+// Lists and the card tracker
+// ============================================================================
+
+const markKey = lines => (lines[0] + '|' + (lines[1] || '')).toLowerCase().replace(/\s+/g, ' ').trim();
+const marksOf = lines => curList().marks[markKey(lines)] || {};
+function setMark(lines, field, on){
+  const L = curList(), k = markKey(lines);
+  const m = Object.assign({}, L.marks[k]);
+  if (on) m[field] = 1; else delete m[field];
+  if (Object.keys(m).length) L.marks[k] = m; else delete L.marks[k];
+}
+// What actually gets printed: everyone, or only the people not marked sent yet.
+const printList = () => state.skipSent ? list.filter(l => !marksOf(l).s) : list;
+
+function populateLists(){
+  $('#listSel').innerHTML = state.lists.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+  $('#listSel').value = state.listId;
+}
+
+function switchList(id){
+  save();
+  state.listId = id;
+  state.recipients = curList().text;
+  state.idx = 0;
+  $('#recipients').value = state.recipients;
+  populateLists();
   save();
   render();
-  const parts = [changed ? `tidied ${plural(changed, 'address', 'addresses')}` : '', dupes ? `removed ${plural(dupes, 'duplicate')}` : ''].filter(Boolean);
-  const msg = parts.length ? '✨ ' + parts.join(' · ').replace(/^./, c => c.toUpperCase()) : '✨ Tidied the list layout';
-  toast(msg, { ms:8000, action:{ label:'Undo', fn:() => {
-    state.recipients = before;
-    $('#recipients').value = before;
-    save();
-    render();
-  } } });
 }
 
-function importFile(file){
-  if (!file) return;
-  if (/\.(xlsx?|numbers|ods)$/i.test(file.name)) {
-    toast('Save the sheet as CSV first (File › Save As › CSV), or just copy the cells and paste them in.', { warn:true, ms:7000 });
+// "Christmas 2026" -> "Christmas 2027" when starting next year's list.
+const nextName = n => /\b(19|20)\d{2}\b/.test(n) ? n.replace(/\b((?:19|20)\d{2})\b/, y => +y + 1) : n + ' (copy)';
+
+async function newList(){
+  const res = await ask({ title:'New list', ok:'Create', body:`<label for="nlName">Name</label><input id="nlName" name="name" required value="List ${state.lists.length + 1}">` });
+  if (!res || !res.name.trim()) return;
+  save();
+  const L = { id:uid(), name:res.name.trim(), text:'', marks:{} };
+  state.lists.push(L);
+  switchList(L.id);
+  toast(`Started “${L.name}”.`);
+}
+
+async function duplicateList(){
+  const L = curList();
+  const res = await ask({ title:'New list from this one', ok:'Create list', body:`
+    <label for="dlName">Name</label><input id="dlName" name="name" required value="${esc(nextName(L.name))}">
+    <label>Who to bring over</label>
+    <label class="inline"><input type="radio" name="keep" value="all" checked> Everyone</label>
+    <label class="inline"><input type="radio" name="keep" value="received"> Only people who sent us a card</label>
+    <label class="inline"><input type="radio" name="keep" value="sent"> Only people we sent a card to</label>
+    <p class="hint">The new list starts with no marks.</p>` });
+  if (!res || !res.name.trim()) return;
+  const keep = lines => res.keep === 'received' ? marksOf(lines).r : res.keep === 'sent' ? marksOf(lines).s : true;
+  const blocks = parseRecipients(state.recipients).filter(keep);
+  save();
+  const N = { id:uid(), name:res.name.trim(), text:blocks.map(b => b.join('\n')).join('\n\n'), marks:{} };
+  state.lists.push(N);
+  switchList(N.id);
+  toast(`Created “${N.name}” with ${plural(blocks.length, 'address', 'addresses')}.`);
+}
+
+async function renameList(){
+  const L = curList();
+  const res = await ask({ title:'Rename list', ok:'Rename', body:`<label for="rnName">Name</label><input id="rnName" name="name" required value="${esc(L.name)}">` });
+  if (!res || !res.name.trim()) return;
+  L.name = res.name.trim();
+  populateLists();
+  save();
+  updateMeta();
+}
+
+function deleteList(){
+  const L = curList();
+  if (state.lists.length === 1) {
+    if (!confirm(`“${L.name}” is your only list. Empty it instead?`)) return;
+    L.marks = {};
+    setRecipients('');
     return;
   }
-  file.text().then(text => {
-    const all = rowsToAddresses(parseDelimited(text));
-    const found = all.filter(a => !TEMPLATE_EXAMPLES.has(a.join('\n')));
-    const skipped = all.length - found.length;
-    if (!found.length) {
-      toast(skipped ? 'That’s still just the template’s example rows. Add your own addresses under the headings.'
-                    : `Couldn’t find any addresses in ${file.name}.`, { warn:true, ms:6000 });
-      return;
-    }
-    if (list.length && !confirm(`Replace the ${plural(list.length, 'address', 'addresses')} already in the list?`)) return;
-    state.recipients = found.map(a => a.join('\n')).join('\n\n');
-    state.idx = 0;
-    celebrateFit = true;
-    $('#recipients').value = state.recipients;
-    toast(`Imported ${plural(found.length, 'address', 'addresses')} from ${file.name}.` +
-          (skipped ? ` Skipped the template’s ${plural(skipped, 'example row')}.` : ''));
-    save();
-    render();
-  });
+  if (!confirm(`Delete “${L.name}” and its ${plural(parseRecipients(L.text).length, 'address', 'addresses')}? This can’t be undone.`)) return;
+  state.lists = state.lists.filter(l => l !== L);
+  // The current list is gone: load the next one before anything saves the box's contents.
+  state.listId = state.lists[0].id;
+  state.recipients = curList().text;
+  switchList(state.listId);
+  toast(`Deleted “${L.name}”.`);
 }
 
-// ppi = pixels per inch for on-screen; null = real inches for printing.
-function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false } = {}){
+function renderTracker(){
+  const box = $('#trackList');
+  const f = state.trackFilter;
+  const rows = list.map((lines, i) => ({ lines, i, m:marksOf(lines) })).filter(r =>
+    f === 'unsent' ? !r.m.s : f === 'sent' ? r.m.s : f === 'received' ? r.m.r : true);
+  if (!list.length) { box.innerHTML = '<p class="hint">Add some addresses and they’ll show up here to tick off.</p>'; return; }
+  if (!rows.length) { box.innerHTML = '<p class="hint">Nobody matches this filter.</p>'; return; }
+  box.replaceChildren(...rows.map(({ lines, i, m }) => {
+    const row = div('track-row');
+    const who = document.createElement('button');
+    who.className = 'tr-who';
+    who.type = 'button';
+    who.innerHTML = `<b>${esc(lines[0])}</b><span>${esc(lines[lines.length - 1])}</span>`;
+    who.title = 'Show this envelope';
+    who.onclick = () => { if (!isLabels()) go(i); };
+    const chip = (field, label, cls) => {
+      const c = document.createElement('button');
+      c.type = 'button';
+      c.className = 'chip ' + cls;
+      c.textContent = label;
+      c.setAttribute('aria-pressed', m[field] ? 'true' : 'false');
+      c.onclick = () => { setMark(lines, field, !marksOf(lines)[field]); save(); renderTracker(); updateMeta(); markStrip(true); updateStatus(); };
+      return c;
+    };
+    row.append(who, chip('s', 'Sent', 'sent'), chip('r', 'Received', 'recv'));
+    return row;
+  }));
+}
+
+function trackerSummary(){
+  let s = 0, r = 0;
+  list.forEach(l => { const m = marksOf(l); if (m.s) s++; if (m.r) r++; });
+  return { s, r };
+}
+
+// ============================================================================
+// Text: the same line styling drives the preview, printing and the PDF
+// ============================================================================
+
+// One entry per line: its text, size in points and weight. The name line can be bold or bigger.
+function lineSpecs(lines, pt, isRecipient){
+  return lines.map((t, i) => ({
+    t: state.caps ? t.toUpperCase() : t,
+    pt: isRecipient && i === 0 ? pt + (+state.namePlus || 0) : pt,
+    bold: isRecipient && i === 0 && state.nameBold,
+  }));
+}
+const spacing = () => +state.spacing || 1.2;
+
+function textBlock(specs, U, P, center){
+  const b = div('tb');
+  for (const s of specs) {
+    const l = div('ln');
+    l.textContent = s.t || ' ';
+    l.style.fontSize = P(s.pt);
+    l.style.lineHeight = String(spacing());
+    if (s.bold) l.style.fontWeight = '700';
+    b.append(l);
+  }
+  if (center) b.style.textAlign = 'center';
+  return b;
+}
+
+// ============================================================================
+// Envelopes and postcards (on screen, in print)
+// ============================================================================
+
+// ppi = pixels per inch for on-screen; null = real inches for printing. side: 'front' | 'back'.
+function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false, side = 'front' } = {}){
   const { w, h } = dims();
   const pos = getPos();
   const U = v => ppi ? (v * ppi) + 'px' : v + 'in';
@@ -994,7 +1585,31 @@ function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false
   env.style.width = U(w);
   env.style.height = U(h);
   env.style.fontFamily = state.font;
-  if (state.caps) env.style.textTransform = 'uppercase';
+  env.style.color = inkColor();
+
+  const addText = (which, pk, specs, p, center, extra) => {
+    const b = div('block ' + which + (extra ? ' ' + extra : '') + (center ? ' center' : ''));
+    b.dataset.which = which;
+    b.dataset.pk = pk;
+    b.style.left = U(p.x + nx);
+    b.style.top = U(p.y + ny);
+    b.append(textBlock(specs, U, P, center));
+    if (!print) { b.tabIndex = 0; b.title = 'Drag to move · arrow keys to nudge'; }
+    env.append(b);
+  };
+
+  if (side === 'back') {
+    if (!print) {
+      // The flap's edges, for orientation only.
+      const flap = div('flap');
+      flap.innerHTML = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="0,0 ${w / 2},${h * 0.55} ${w},0" /></svg>`;
+      env.append(flap);
+    }
+    const ret = returnLines();
+    if (ret.length) addText('ret', 'back', lineSpecs(ret, +state.retPt || 10, false), pos.back, true);
+    else if (!print) addText('ret', 'back', lineSpecs(['Your return address'], +state.retPt || 10, false), pos.back, true, 'placeholder');
+    return env;
+  }
 
   if (stamp) {
     const st = div(print ? 'stamp' : 'stamp fancy');   // perforated look on screen; a plain box on the test sheet
@@ -1003,20 +1618,16 @@ function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false
     env.append(st);
   }
 
-  const add = (which, text, p, pt, extra) => {
-    const b = div('block ' + which + (extra ? ' ' + extra : ''));
-    b.dataset.which = which;
-    b.style.left = U(p.x + nx);
-    b.style.top = U(p.y + ny);
-    b.style.fontSize = P(pt);
-    b.textContent = text;
-    if (!print) { b.tabIndex = 0; b.title = 'Drag to move · arrow keys to nudge'; }
-    env.append(b);
-  };
+  if (isCard() && state.divider) {
+    const d = div('divider');
+    Object.assign(d.style, { left:U(w * 0.5 + nx), top:U(0.35 + ny), height:U(h - 0.7) });
+    env.append(d);
+  }
 
   if (state.logo) {
     const b = div('block logo');
     b.dataset.which = 'logo';
+    b.dataset.pk = 'logo';
     b.style.left = U(pos.logo.x + nx);
     b.style.top = U(pos.logo.y + ny);
     b.style.width = U(+state.logoW || 1);
@@ -1033,6 +1644,7 @@ function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false
   if (DECOS[state.deco]) {
     const b = div('block deco');
     b.dataset.which = 'deco';
+    b.dataset.pk = 'deco';
     b.style.left = U(pos.deco.x + nx);
     b.style.top = U(pos.deco.y + ny);
     b.style.width = U(+state.decoW || 1);
@@ -1042,46 +1654,204 @@ function buildEnvelope(lines, ppi, { print = false, nudge = false, stamp = false
     env.append(b);
   }
 
-  if (state.printReturn) {
-    const ret = (state.returnText || '').split('\n').map(s => s.trim()).filter(Boolean).join('\n');
-    if (ret) add('ret', ret, pos.ret, +state.retPt || 10);
-    else if (!print) add('ret', 'Your return address', pos.ret, +state.retPt || 10, 'placeholder');
+  if (returnOnFront()) {
+    const ret = returnLines();
+    if (ret.length) addText('ret', 'ret', lineSpecs(ret, +state.retPt || 10, false), pos.ret, false);
+    else if (!print) addText('ret', 'ret', lineSpecs(['Your return address'], +state.retPt || 10, false), pos.ret, false, 'placeholder');
   }
-  add('rcp', lines.join('\n'), pos.rcp, +state.rcpPt || 12, !print && lines === EMPTY ? 'placeholder' : '');
+  addText('rcp', rcpKey(), lineSpecs(lines, +state.rcpPt || 12, true), pos[rcpKey()], centered(),
+          !print && lines === EMPTY ? 'placeholder' : '');
   return env;
 }
+
+// ============================================================================
+// Label sheets
+// ============================================================================
+
+const labelSheet = () => LABEL_SHEETS.find(s => s.key === state.labelSheet) || LABEL_SHEETS[0];
+const mctx = document.createElement('canvas').getContext('2d');
+
+// Everything needed to lay out the label pages.
+function labelPlan(){
+  const S = labelSheet(), cap = S.cols * S.rows;
+  const start = clamp((+state.labelStart || 1) - 1, 0, cap - 1);
+  let items;
+  if (state.labelWhat === 'return') {
+    const ret = returnLines();
+    const n = Math.max(1, Math.min(20, +state.returnSheets || 1)) * cap - start;
+    items = ret.length ? Array.from({ length:n }, () => ({ lines:ret, kind:'ret', i:-1 })) : [];
+  } else {
+    items = printList().map(lines => ({ lines, kind:'rcp', i:list.indexOf(lines) }));
+  }
+  const pages = Math.max(1, Math.ceil((start + items.length) / cap));
+  return { S, cap, start, items, pages, page:PAGES[S.page] };
+}
+const labelSlot = (S, slot) => ({ x:S.left + (slot % S.cols) * S.hp, y:S.top + Math.floor(slot / S.cols) * S.vp });
+
+// Largest scale (up to 1) at which the lines fit the space, measured with the real font.
+// Text isn't shrunk below 6pt; anything that still doesn't fit is reported as too long.
+const MIN_PT = 6;
+function fitText(specs, availW, availH){
+  const smallest = Math.min(...specs.map(l => l.pt));
+  for (let s = 1; smallest * s >= MIN_PT - 1e-9; s -= 0.04) {
+    let wMax = 0, hSum = 0;
+    for (const l of specs) {
+      mctx.font = `${l.bold ? 700 : 400} ${l.pt * s}px ${state.font}`;
+      wMax = Math.max(wMax, mctx.measureText(l.t).width);
+      hSum += l.pt * s * spacing();
+    }
+    if (wMax / 72 <= availW && hSum / 72 <= availH) return { s, fits:true };
+  }
+  return { s:Math.min(1, MIN_PT / smallest), fits:false };
+}
+
+const layoutCache = new Map();
+function labelLayout(S, item){
+  const key = [S.key, item.kind, item.lines.join('\n'), state.font, state.labelPt, state.spacing, state.caps, state.nameBold, state.namePlus, !!state.logo].join('|');
+  if (layoutCache.has(key)) return layoutCache.get(key);
+  const padX = Math.min(0.12, S.w * 0.06), padY = Math.min(0.06, S.h * 0.1);
+  const specs = lineSpecs(item.lines, +state.labelPt || 11, item.kind === 'rcp');
+  let logoW = 0, logoHt = 0;
+  if (item.kind === 'ret' && state.logo) {
+    logoHt = S.h - 2 * padY;
+    logoW = Math.min(logoHt * state.logo.w / state.logo.h, S.w * 0.3);
+    logoHt = logoW * state.logo.h / state.logo.w;
+  }
+  const gap = logoW ? 0.08 : 0;
+  const fit = fitText(specs, S.w - 2 * padX - logoW - gap, S.h - 2 * padY);
+  const L = { padX, padY, specs, logoW, logoHt, gap, ...fit };
+  if (layoutCache.size > 3000) layoutCache.clear();
+  layoutCache.set(key, L);
+  return L;
+}
+
+// One sheet of labels. On screen (ppi) or for printing (null = inches).
+function buildSheet(plan, pageIdx, ppi, { print = false, nudge = false, test = false } = {}){
+  const U = v => ppi ? (v * ppi) + 'px' : v + 'in';
+  const P = pt => ppi ? (pt * ppi / 72) + 'px' : pt + 'pt';
+  const { S, cap, start, items, page } = plan;
+  const nx = nudge ? (+state.nudgeX || 0) : 0, ny = nudge ? (+state.nudgeY || 0) : 0;
+  const sheet = div('sheetview');
+  sheet.style.width = U(page.w);
+  sheet.style.height = U(page.h);
+  sheet.style.fontFamily = state.font;
+  sheet.style.color = inkColor();
+  for (let slot = 0; slot < cap; slot++) {
+    const k = pageIdx * cap + slot - start;
+    const { x, y } = labelSlot(S, slot);
+    const box = div('label' + (!print || test ? ' outlined' : ''));
+    Object.assign(box.style, { left:U(x + nx), top:U(y + ny), width:U(S.w), height:U(S.h) });
+    let item = items[k];
+    if (!item && !print && !items.length && slot === start && pageIdx === 0)
+      item = { lines: state.labelWhat === 'return' ? ['Your return address'] : EMPTY, kind: state.labelWhat === 'return' ? 'ret' : 'rcp', ph:true };
+    if (k < 0 && !print) box.classList.add('used');
+    if (item) {
+      const L = labelLayout(S, item);
+      box.style.padding = `${U(L.padY)} ${U(L.padX)}`;
+      box.style.justifyContent = centered() ? 'center' : 'flex-start';
+      box.style.gap = U(L.gap);
+      if (L.logoW) {
+        const img = document.createElement('img');
+        img.src = state.logo.src;
+        img.alt = '';
+        Object.assign(img.style, { width:U(L.logoW), height:U(L.logoHt), flex:'none' });
+        if (state.logoGray) img.style.filter = 'grayscale(1)';
+        box.append(img);
+      }
+      box.append(textBlock(L.specs.map(s => ({ ...s, pt:s.pt * L.s })), U, P, centered()));
+      if (item.ph) box.classList.add('placeholder');
+      if (!L.fits && !print) box.classList.add('over');
+    }
+    sheet.append(box);
+  }
+  return sheet;
+}
+
+// ============================================================================
+// Rendering the page
+// ============================================================================
 
 let list = [];
 let currentLines = EMPTY;
 let ppi = 60;
-let badIdx = [];        // 0-based indexes of addresses that run off the envelope
+let badIdx = [];        // 0-based indexes of addresses that run off the envelope / don't fit their label
+let checks = [];        // [{ i, issues }] addresses that look wrong
 let lastSize = null;    // envelope size last drawn, so a size change can animate
 
 function render(){
   list = parseRecipients(state.recipients);
   state.idx = clamp(state.idx | 0, 0, Math.max(0, list.length - 1));
   currentLines = list[state.idx] || EMPTY;
-  $('#printAll').textContent = list.length ? `Print all (${list.length})` : 'Print all';
-  $('#printAll').disabled = $('#printOne').disabled = !list.length;
-  if (!pdfBusy) $('#savePdf').disabled = !list.length;
+  if (!backMode()) state.view = 'front';
+  const L = isLabels();
+  const plan = L ? labelPlan() : null;
+  if (plan) state.labelPage = clamp(state.labelPage | 0, 0, plan.pages - 1);
+  const n = L ? plan.items.length : printList().length;
+  $('#printAll').textContent = L ? `Print all (${plural(plan.pages, 'sheet')})` : n ? `Print all (${n})` : 'Print all';
+  $('#printAll').disabled = !n;
+  $('#printOne').disabled = !n;
+  $('#printOneLabel').textContent = L ? 'Print this sheet' : 'Print this one';
+  if (!pdfBusy) $('#savePdf').disabled = !n;
+  // show the controls that belong to this mode
+  $('#envCtl').hidden = state.mode !== 'envelope';
+  $('#cardCtl').hidden = !isCard();
+  $('#labelCtl').hidden = !L;
+  $('#paperCtl').hidden = L;
+  $('#paperNote').hidden = !paper().dark;
+  $('#returnSheetsBox').hidden = state.labelWhat !== 'return';
   $('#customRow').hidden = state.size !== 'custom';
+  $('#envSizes').hidden = L;
+  $('#labelSizeBox').hidden = !L;
+  $('#returnWhereBox').hidden = L;
+  $('#backBox').hidden = !backMode();
+  $('#backFlipBox').hidden = !backMode();
+  $('#sideSeg').hidden = !backMode();
+  $('#reset').hidden = L;
+  $('#posGrid').hidden = L;
+  $('#dragHint').hidden = L;
+  $('#rcpPosX').hidden = $('#rcpPosY').hidden = state.view === 'back';
   $('#logoEmpty').hidden = !!state.logo;
-  $('#logoSet').hidden = $('#logoPosX').hidden = $('#logoPosY').hidden = !state.logo;
+  $('#logoSet').hidden = !state.logo;
+  $('#logoPosX').hidden = $('#logoPosY').hidden = !state.logo || state.view === 'back';
   if (state.logo) { $('#logoThumb').src = state.logo.src; $('#logoThumb').style.filter = state.logoGray ? 'grayscale(1)' : ''; }
   $('#decoSize').hidden = !DECOS[state.deco];
+  syncSegs();
   updateNav();
   updateMeta();
   renderPreview();
 }
 
+function syncSegs(){
+  document.querySelectorAll('[data-set]').forEach(b => b.setAttribute('aria-pressed', String(state[b.dataset.set] === b.dataset.val)));
+}
+
+const cur = () => isLabels() ? state.labelPage : state.idx;
+
 function updateNav(){
+  if (isLabels()) {
+    const plan = labelPlan();
+    $('#navLabel').textContent = `Sheet ${state.labelPage + 1} of ${plan.pages}`;
+    $('#prev').disabled = state.labelPage <= 0;
+    $('#next').disabled = state.labelPage >= plan.pages - 1;
+    return;
+  }
   $('#navLabel').textContent = list.length ? `${state.idx + 1} of ${list.length}` : 'No addresses yet';
   $('#prev').disabled = state.idx <= 0;
   $('#next').disabled = state.idx >= list.length - 1;
 }
 
-// Flip to another envelope. Cheap on purpose: nothing about the batch changed, so no re-measure.
+// Flip to another envelope (or label sheet). Cheap on purpose: nothing about the batch changed.
 function go(i){
+  if (isLabels()) {
+    const next = clamp(i, 0, labelPlan().pages - 1);
+    if (next === state.labelPage) return;
+    const dir = Math.sign(next - state.labelPage);
+    state.labelPage = next;
+    save();
+    updateNav();
+    renderPreview(null, false, dir);
+    return;
+  }
   if (!list.length) return;
   const next = clamp(i, 0, list.length - 1);
   if (next === state.idx) return;
@@ -1094,32 +1864,54 @@ function go(i){
   markStrip();
 }
 
+function emptyHint(stage, text, onclick){
+  const hint = document.createElement('button');
+  hint.className = 'empty-hint';
+  hint.textContent = text;
+  hint.onclick = onclick;
+  stage.append(hint);
+}
+const focusRecipients = () => { state.open.recipients = true; syncSections(); save(); $('#recipients').focus(); };
+const focusReturn = () => { state.open.return = true; syncSections(); save(); document.querySelector('[data-key=returnText]').focus(); };
+
 // slide: -1 / 1 slides the new envelope in from that side, like dealing the next card.
 function renderPreview(focusWhich, remeasure = true, slide = 0){
-  const { w, h } = dims();
   const stage = $('#stage');
   const avail = stage.clientWidth - 48;
-  ppi = Math.max(10, Math.min(avail / w, 360 / h, 110));
-  const env = buildEnvelope(currentLines, ppi, { stamp:true });
-  stage.replaceChildren(env);
-  env.querySelectorAll('.block').forEach(makeInteractive);
-  if (!list.length) {
-    const hint = document.createElement('button');
-    hint.className = 'empty-hint';
-    hint.textContent = 'Add your first address to get started';
-    hint.onclick = () => { state.open.recipients = true; syncSections(); save(); $('#recipients').focus(); };
-    stage.append(hint);
+  let el;
+  if (isLabels()) {
+    const plan = labelPlan();
+    ppi = Math.max(10, Math.min(avail / plan.page.w, 560 / plan.page.h, 90));
+    el = buildSheet(plan, state.labelPage, ppi);
+    stage.replaceChildren(el);
+    stage.classList.add('sheet-stage');
+    if (!plan.items.length) {
+      if (state.labelWhat === 'return') emptyHint(stage, 'Add your return address to fill a sheet', focusReturn);
+      else emptyHint(stage, list.length ? 'Everyone is marked sent (see Card tracker)' : 'Add your first address to get started', focusRecipients);
+    }
+    lastSize = null;
+    $('#sizeReadout').textContent = `${labelSheet().name.split(' · ').slice(0, 2).join(' · ')} · ${PAGES[labelSheet().page].name}`;
+  } else {
+    stage.classList.remove('sheet-stage');
+    const { w, h } = dims();
+    ppi = Math.max(10, Math.min(avail / w, 360 / h, 110));
+    const side = state.view === 'back' ? 'back' : 'front';
+    el = buildEnvelope(currentLines, ppi, { stamp: side === 'front', side });
+    el.style.setProperty('--paper', paper().c);
+    stage.replaceChildren(el);
+    el.querySelectorAll('.block').forEach(makeInteractive);
+    if (!list.length && side === 'front') emptyHint(stage, 'Add your first address to get started', focusRecipients);
+    morph(el, w, h);
+    $('#sizeReadout').textContent = `${sizeName()} · ${dimsText(w, h)}${side === 'back' ? ' · back' : ''}`;
+    syncPosInputs();
+    overflows(el).forEach(b => b.classList.add('over'));
   }
-  morph(env, w, h);
   if (slide && !reduceMotion()) {
-    env.animate([{ transform:`translateX(${slide * 56}px) rotate(${slide * 1.5}deg)`, opacity:0 }, { transform:'none', opacity:1 }],
-                { duration:260, easing:'cubic-bezier(.2,.8,.2,1)' });
+    el.animate([{ transform:`translateX(${slide * 56}px) rotate(${slide * 1.5}deg)`, opacity:0 }, { transform:'none', opacity:1 }],
+               { duration:260, easing:'cubic-bezier(.2,.8,.2,1)' });
   }
-  $('#sizeReadout').textContent = `${sizeName()} · ${fmt(w)} × ${fmt(h)} in`;
-  syncPosInputs();
-  overflows(env).forEach(b => b.classList.add('over'));
   if (remeasure) scheduleMeasure(); else updateStatus();
-  if (focusWhich) env.querySelector(`.block.${focusWhich}`)?.focus();
+  if (focusWhich) el.querySelector(`.block.${focusWhich}`)?.focus();
 }
 
 // When the envelope size changes, grow or shrink the paper from the old size to the new one
@@ -1130,27 +1922,29 @@ function morph(env, w, h){
   if (!prev || (prev.w === w && prev.h === h) || reduceMotion()) return;
   const ease = 'cubic-bezier(.2,.8,.2,1)';
   env.animate([{ width: prev.w * prev.ppi + 'px', height: prev.h * prev.ppi + 'px' }, { width: w * ppi + 'px', height: h * ppi + 'px' }], { duration:320, easing:ease });
-  env.querySelectorAll('.block, .stamp').forEach(b => b.animate([{ opacity:0 }, { opacity:1 }], { duration:200, delay:220, fill:'backwards' }));
+  env.querySelectorAll('.block, .stamp, .divider').forEach(b => b.animate([{ opacity:0 }, { opacity:1 }], { duration:200, delay:220, fill:'backwards' }));
 }
 
 // One-line summaries in the section headers, so closed sections still say what's set.
 function updateMeta(){
   const { w, h } = dims();
   const font = (FONTS.find(f => f[1] === state.font) || FONTS[0])[0];
-  const ret = (state.returnText || '').split('\n').map(s => s.trim()).filter(Boolean)[0];
+  const ret = returnLines()[0];
   const nx = +state.nudgeX || 0, ny = +state.nudgeY || 0, rot = +state.rotate || 0;
-  const printer = [nx || ny ? `nudge ${fmt(nx)}, ${fmt(ny)} in` : '', rot ? `${rot}°` : ''].filter(Boolean).join(' · ');
+  const printer = [nx || ny ? `nudge ${fmtU(nx)}, ${fmtU(ny)} ${isMM() ? 'mm' : 'in'}` : '', rot ? `${rot}°` : ''].filter(Boolean).join(' · ');
+  const { s, r } = trackerSummary();
   const meta = {
-    envelope: `${sizeName()} · ${fmt(w)} × ${fmt(h)} in`,
-    recipients: list.length ? plural(list.length, 'address', 'addresses') : 'None yet',
-    return: !state.printReturn ? 'Off' : (ret || 'Not set'),
+    envelope: isLabels() ? `Labels · ${labelSheet().name.split(' · ')[0]}` : isCard() ? `Postcard · ${dimsText(w, h)}` : `${sizeName()} · ${dimsText(w, h)}`,
+    recipients: `${curList().name} · ${list.length ? plural(list.length, 'address', 'addresses') : 'empty'}`,
+    return: !state.printReturn ? 'Off' : (ret ? (state.returnWhere === 'back' && !isLabels() ? 'Back flap · ' : '') + ret : 'Not set'),
     logo: state.logo ? 'Added' : 'None',
     deco: DECOS[state.deco] ? $('#deco').selectedOptions[0].textContent.split(' · ')[0] : 'None',
-    text: `${font} ${fmt(state.rcpPt)}pt${state.caps ? ' · CAPS' : ''}`,
+    text: `${font} ${fmt(isLabels() ? state.labelPt : state.rcpPt)}pt${centered() ? ' · centred' : ''}${state.caps ? ' · CAPS' : ''}`,
     printer: printer || 'None',
     reset: '',
+    tracker: list.length ? `Sent ${s} of ${list.length} · received ${r}` : '',
   };
-  document.querySelectorAll('.sect').forEach(s => { s.querySelector('.meta').textContent = meta[s.dataset.sect] ?? ''; });
+  document.querySelectorAll('.sect').forEach(sec => { sec.querySelector('.meta').textContent = meta[sec.dataset.sect] ?? ''; });
 }
 
 function syncSections(){
@@ -1162,9 +1956,11 @@ function scheduleMeasure(){
   clearTimeout(measureTimer);
   measureTimer = setTimeout(() => {
     measureAll();
+    checks = computeChecks();
     buildStrip();
+    renderTracker();
     updateStatus();
-    // The squirrel shows up when a batch goes from "something runs off" to "everything fits",
+    // The squirrel shows up when a batch goes from "something doesn't fit" to "everything fits",
     // or when a freshly imported list fits first time.
     const fits = list.length && !badIdx.length;
     if (fits && ((prevBad && prevBad > 0) || celebrateFit)) peekSquirrel();
@@ -1174,7 +1970,7 @@ function scheduleMeasure(){
 }
 
 function peekSquirrel(){
-  if (reduceMotion()) { toast('🐿️ Every envelope fits.'); return; }
+  if (reduceMotion()) { toast('🐿️ Everything fits.'); return; }
   $('#stage .squirrel')?.remove();
   const sq = document.createElement('span');
   sq.className = 'squirrel';
@@ -1194,10 +1990,17 @@ function peekSquirrel(){
   ], { duration:2400, easing:'ease-in-out' }).onfinish = () => sq.remove();
 }
 
-// Lay out every address off-screen at preview scale and note which ones spill off the envelope.
+// Envelopes: lay out every address off-screen at preview scale and note which spill off the
+// envelope. Labels: note which addresses don't fit their label even at the smallest text.
 function measureAll(){
-  const box = $('#measure');
   badIdx = [];
+  if (isLabels()) {
+    const plan = labelPlan();
+    if (state.labelWhat === 'return') { if (plan.items.length && !labelLayout(plan.S, plan.items[0]).fits) badIdx.push(-1); }
+    else plan.items.forEach(it => { if (!labelLayout(plan.S, it).fits) badIdx.push(it.i); });
+    return;
+  }
+  const box = $('#measure');
   list.forEach((lines, i) => {
     const e = buildEnvelope(lines, ppi);
     box.replaceChildren(e);
@@ -1210,21 +2013,23 @@ function measureAll(){
 // text never hits the browser's minimum font size and reflows.
 function buildStrip(){
   const strip = $('#strip');
-  strip.hidden = list.length < 2;
+  strip.hidden = isLabels() || list.length < 2;
   if (strip.hidden) { strip.replaceChildren(); return; }
   const { w, h } = dims();
   const base = 36, k = 46 / (h * base);
-  const bad = new Set(badIdx);
+  const bad = new Set(badIdx), flagged = new Set(checks.map(c => c.i));
   strip.replaceChildren(...list.map((lines, i) => {
     const t = document.createElement('button');
-    t.className = 'thumb' + (bad.has(i) ? ' bad' : '');
-    t.title = lines[0] + (bad.has(i) ? ' (runs off the edge)' : '');
+    t.className = 'thumb' + (bad.has(i) ? ' bad' : flagged.has(i) ? ' check' : '');
+    t.title = lines[0] + (bad.has(i) ? ' (runs off the edge)' : flagged.has(i) ? ' (worth a check)' : '');
     t.dataset.i = i;
     const clip = div('thumb-clip');
     clip.style.width = w * base * k + 'px';
     clip.style.height = h * base * k + 'px';
+    clip.style.background = paper().c;
     const env = buildEnvelope(lines, base, { print:true });
     env.style.transform = `scale(${k})`;
+    env.style.setProperty('--paper', paper().c);
     clip.append(env);
     const num = document.createElement('span');
     num.className = 'num';
@@ -1238,45 +2043,82 @@ function buildStrip(){
 
 function markStrip(instant){
   const strip = $('#strip');
-  [...strip.children].forEach((t, i) => t.classList.toggle('active', i === state.idx));
+  [...strip.children].forEach((t, i) => {
+    t.classList.toggle('active', i === state.idx);
+    t.classList.toggle('sent', !!(list[i] && marksOf(list[i]).s));
+  });
   const t = strip.children[state.idx];
   if (t) strip.scrollTo({ left: t.offsetLeft - strip.clientWidth / 2 + t.offsetWidth / 2, behavior: instant || reduceMotion() ? 'auto' : 'smooth' });
 }
 
-// Warning under the preview plus the status line in the print bar.
+// Red warning (doesn't fit), amber list (worth a check), and the status line in the print bar.
 function updateStatus(){
-  const env = $('#stage .env');
   const warn = $('#warn');
   const n = badIdx.length;
-  if (n) {
-    const shown = badIdx.slice(0, 12).map(i => i + 1).join(', ') + (n > 12 ? '…' : '');
-    warn.textContent = `${n === 1 ? 'Address' : n + ' addresses'} #${shown} ${n === 1 ? 'runs' : 'run'} off the edge of the envelope. Move the block or make the text smaller.`;
-    warn.classList.add('show');
-  } else if (env && overflows(env).length) {
-    warn.textContent = 'The return address or logo runs off the edge of the envelope.';
-    warn.classList.add('show');
+  if (isLabels()) {
+    if (n) {
+      warn.textContent = badIdx[0] === -1 ? 'Your return address is too long for this label, even with small text. Try a bigger label or fewer lines.'
+        : `${n === 1 ? 'Address' : n + ' addresses'} #${badIdx.slice(0, 12).map(i => i + 1).join(', ')} ${n === 1 ? 'is' : 'are'} too long for this label even with small text. Try a bigger label.`;
+      warn.classList.add('show');
+    } else warn.classList.remove('show');
   } else {
-    warn.classList.remove('show');
+    const env = $('#stage .env');
+    if (n) {
+      const shown = badIdx.slice(0, 12).map(i => i + 1).join(', ') + (n > 12 ? '…' : '');
+      warn.textContent = `${n === 1 ? 'Address' : n + ' addresses'} #${shown} ${n === 1 ? 'runs' : 'run'} off the edge. Move the block or make the text smaller.`;
+      warn.classList.add('show');
+    } else if (env && overflows(env).length) {
+      warn.textContent = 'Something on this side runs off the edge.';
+      warn.classList.add('show');
+    } else warn.classList.remove('show');
   }
+  const caution = $('#caution');
+  if (checks.length) {
+    caution.replaceChildren();
+    const head = document.createElement('span');
+    head.textContent = `${plural(checks.length, 'address', 'addresses')} worth a second look: `;
+    caution.append(head);
+    checks.slice(0, 8).forEach(c => {
+      // On envelopes each one jumps to that envelope; label sheets have no single-address view.
+      const b = document.createElement(isLabels() ? 'span' : 'button');
+      b.textContent = `#${c.i + 1} ${c.issues.join(', ')}`;
+      if (!isLabels()) { b.type = 'button'; b.onclick = () => go(c.i); }
+      else b.style.paddingRight = '8px';
+      caution.append(b);
+    });
+    if (checks.length > 8) caution.append(` and ${checks.length - 8} more`);
+    caution.classList.add('show');
+  } else caution.classList.remove('show');
+
   const status = $('#pbStatus');
-  status.textContent = list.length ? `${plural(list.length, 'envelope')} · ${sizeName()}` : 'No addresses yet';
-  if (n) {
-    const b = document.createElement('span');
-    b.className = 'bad';
-    b.textContent = ` · ⚠ ${n} off the edge`;
-    status.append(b);
+  if (isLabels()) {
+    const plan = labelPlan();
+    status.textContent = plan.items.length ? `${plural(plan.items.length, 'label')} on ${plural(plan.pages, 'sheet')} · ${labelSheet().name.split(' · ')[0]}` : 'Nothing to print yet';
+  } else {
+    const pl = printList().length, skipped = list.length - pl;
+    status.textContent = list.length ? `${plural(pl, 'envelope')} · ${sizeName()}${skipped ? ` · ${skipped} already sent` : ''}` : 'No addresses yet';
   }
+  if (n) { const b = document.createElement('span'); b.className = 'bad'; b.textContent = ` · ⚠ ${n} ${isLabels() ? 'too long' : 'off the edge'}`; status.append(b); }
+  if (checks.length) { const b = document.createElement('span'); b.className = 'chk'; b.textContent = ` · ${checks.length} to check`; status.append(b); }
+}
+
+// ============================================================================
+// Dragging, nudging, resizing
+// ============================================================================
+
+function posMap(){
+  return { rcp: rcpKey(), ret: state.view === 'back' ? 'back' : 'ret', logo: 'logo' };
 }
 
 function syncPosInputs(){
-  const p = getPos();
-  const fields = [['rcpX', p.rcp.x], ['rcpY', p.rcp.y], ['retX', p.ret.x], ['retY', p.ret.y]];
+  const p = getPos(), m = posMap();
+  const fields = [['rcpX', p[m.rcp].x], ['rcpY', p[m.rcp].y], ['retX', p[m.ret].x], ['retY', p[m.ret].y]];
   if (p.logo) fields.push(['logoX', p.logo.x], ['logoY', p.logo.y]);
-  if (document.activeElement !== $('#logoW')) $('#logoW').value = fmt(state.logoW);
   for (const [id, v] of fields) {
     const el = document.getElementById(id);
-    if (document.activeElement !== el) el.value = fmt(v);
+    if (document.activeElement !== el) el.value = fmtU(v);
   }
+  for (const id of ['logoW', 'decoW']) if (document.activeElement !== $('#' + id)) $('#' + id).value = fmtU(state[id]);
 }
 
 function overflows(env){
@@ -1306,7 +2148,7 @@ function makeResizable(b){
       state[key] = clamp(round2(ow + (ev.clientX - sx) / ppi), 0.2, dims().w);
       b.style.width = state[key] * ppi + 'px';
       b.style.height = state[key] * ratio * ppi + 'px';
-      $('#' + key).value = fmt(state[key]);
+      $('#' + key).value = fmtU(state[key]);
     };
     const up = () => {
       handle.removeEventListener('pointermove', move);
@@ -1322,14 +2164,14 @@ function makeResizable(b){
 }
 
 function makeInteractive(b){
-  const which = b.dataset.which;
+  const which = b.dataset.which, pk = b.dataset.pk;
   makeResizable(b);
   b.addEventListener('pointerdown', e => {
     e.preventDefault();
     b.focus();
     try { b.setPointerCapture(e.pointerId); } catch {}
     b.classList.add('dragging');
-    const p = getPos()[which];
+    const p = getPos()[pk];
     const sx = e.clientX, sy = e.clientY, ox = p.x, oy = p.y;
     const { w, h } = dims();
     const move = ev => {
@@ -1356,7 +2198,7 @@ function makeInteractive(b){
     e.preventDefault();
     const step = e.shiftKey ? 0.25 : 0.05;
     const { w, h } = dims();
-    const p = getPos()[which];
+    const p = getPos()[pk];
     p.x = clamp(round2(p.x + d[0] * step), 0, w);
     p.y = clamp(round2(p.y + d[1] * step), 0, h);
     save();
@@ -1364,28 +2206,188 @@ function makeInteractive(b){
   });
 }
 
-let pendingSendOff = 0;   // envelopes in the job just handed to the print dialog
+// ============================================================================
+// Printing
+// ============================================================================
+
+let pendingSendOff = null;   // what was just handed to the print dialog
 
 async function doPrint(mode){
-  // Web fonts have to be loaded before printing, or the envelopes fall back to a plain font.
+  // Web fonts have to be loaded before printing, or the text falls back to a plain font.
   try { await document.fonts.load(`16px ${state.font}`); await document.fonts.ready; } catch {}
-  if (!buildPrint(mode)) return;
+  const job = buildPrint(mode);
+  if (!job) return;
   // Make sure every logo copy is decoded, or the first pages can print blank where it goes.
   await Promise.all([...$('#printRoot').querySelectorAll('img')].map(i => i.decode().catch(() => {})));
-  pendingSendOff = mode === 'test' ? 0 : $('#printRoot').children.length;
+  pendingSendOff = job;
   setTimeout(() => window.print(), 50);
 }
 
-// ---- Save as PDF ----
-// Each envelope is drawn onto a canvas at print resolution, using the same positions, fonts,
-// logo, flourish, nudge and rotation as printing, then packed into a PDF by the small writer
-// below. Everything happens in the browser; nothing is uploaded.
+// Lays out the print pages and returns what's in the job, or null if there's nothing to print.
+// Kept separate from doPrint so the browser's own Print command gets pages too.
+function buildPrint(mode){
+  const test = mode === 'test';
+  const root = $('#printRoot');
+  root.replaceChildren();
+
+  if (isLabels()) {
+    const plan = labelPlan();
+    if (!plan.items.length && !test) return null;
+    const pagesToPrint = mode === 'all' ? [...Array(plan.pages).keys()] : [state.labelPage];
+    $('#pageStyle').textContent = `@page { size: ${plan.page.w}in ${plan.page.h}in; margin: 0; }`;
+    for (const p of pagesToPrint) {
+      const sheet = div('sheet');
+      sheet.style.width = plan.page.w + 'in';
+      sheet.style.height = (plan.page.h - 0.02) + 'in';
+      sheet.append(buildSheet(plan, p, null, { print:true, nudge:true, test }));
+      if (test) {
+        const cap = div('caption');
+        cap.textContent = `Test sheet · ${labelSheet().name} · hold it behind a label sheet, up to the light`;
+        cap.style.bottom = '.12in';
+        sheet.append(cap);
+      }
+      root.append(sheet);
+    }
+    if (test) return { kind:'test' };
+    const shown = new Set(pagesToPrint);
+    const items = plan.items.filter((_, k) => shown.has(Math.floor((plan.start + k) / plan.cap)));
+    return { kind:'labels', n:items.length, sheets:pagesToPrint.length, lines: plan.labelWhat === 'return' || state.labelWhat === 'return' ? [] : items.map(it => it.lines) };
+  }
+
+  const { w, h } = dims();
+  const backs = mode === 'backs';
+  const side = backs || (test && state.view === 'back') ? 'back' : 'front';
+  const rot = test ? 0 : ((+state.rotate || 0) + (side === 'back' && state.backFlip ? 180 : 0)) % 360;
+  const items = mode === 'all' || backs ? printList() : [list[state.idx] || EMPTY];
+  if (!items.length) return null;
+
+  let pw, ph;
+  if (test) {
+    if (w <= 10.5 && h <= 8) { pw = 11; ph = 8.5; }
+    else if (w <= 8 && h <= 10.5) { pw = 8.5; ph = 11; }
+    else { pw = Math.ceil(w + 1); ph = Math.ceil(h + 1); }
+  } else {
+    [pw, ph] = rot % 180 ? [h, w] : [w, h];
+  }
+  $('#pageStyle').textContent = `@page { size: ${pw}in ${ph}in; margin: 0; }`;
+
+  const transforms = {
+    0:   'none',
+    90:  `translateX(${h}in) rotate(90deg)`,
+    180: `translate(${w}in, ${h}in) rotate(180deg)`,
+    270: `translateY(${w}in) rotate(-90deg)`,
+  };
+
+  for (const lines of items) {
+    const sheet = div('sheet');
+    sheet.style.width = pw + 'in';
+    sheet.style.height = (ph - 0.02) + 'in';  // a hair short so rounding never spills a blank page
+    // Nudge applies to the test sheet too, so its effect shows against the dashed outline.
+    // Rotation doesn't: letter paper feeds differently from envelopes.
+    const env = buildEnvelope(lines, null, { print:true, nudge:true, stamp:test && side === 'front', side });
+    env.style.position = 'absolute';
+    env.style.transformOrigin = '0 0';
+    if (test) {
+      env.style.left = ((pw - w) / 2) + 'in';
+      env.style.top = ((ph - h) / 2) + 'in';
+      env.prepend(div('outline'));
+      if (side === 'back') {
+        const flap = div('flap');
+        flap.innerHTML = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="0,0 ${w / 2},${h * 0.55} ${w},0" /></svg>`;
+        env.prepend(flap);
+      }
+      const cap = div('caption');
+      const nx = +state.nudgeX || 0, ny = +state.nudgeY || 0;
+      const adj = [
+        nx || ny ? `printer nudge applied: ${fmtU(Math.abs(nx))} ${isMM() ? 'mm' : 'in'} ${nx < 0 ? 'left' : 'right'}, ${fmtU(Math.abs(ny))} ${ny < 0 ? 'up' : 'down'}` : '',
+        +state.rotate ? `rotation (${+state.rotate}°) applies to envelopes only` : '',
+      ].filter(Boolean).join(' · ');
+      cap.textContent = `Test sheet · ${sizeName()}${side === 'back' ? ' (back flap)' : ''} · ${dimsText(w, h)} · lay the envelope over the dashed outline` + (adj ? ` · ${adj}` : '');
+      sheet.append(cap);
+    } else {
+      env.style.left = '0';
+      env.style.top = '0';
+      env.style.transform = transforms[rot];
+    }
+    sheet.append(env);
+    root.append(sheet);
+  }
+  if (test) return { kind:'test' };
+  return { kind: backs ? 'backs' : isCard() ? 'postcards' : 'envelopes', n:items.length, lines: backs ? [] : items.filter(l => l !== EMPTY) };
+}
+window.addEventListener('beforeprint', () => {
+  if (!$('#printRoot').children.length) buildPrint(isLabels() || list.length ? 'all' : 'test');
+});
+window.addEventListener('afterprint', () => {
+  $('#printRoot').replaceChildren();
+  const job = pendingSendOff;
+  pendingSendOff = null;
+  if (job && job.kind !== 'test') setTimeout(() => sendOff(job), 150);
+});
+
+// After the print dialog closes: a little flock of envelopes flutters up from the Print button,
+// with a shortcut to tick everyone off in the card tracker, and the back flaps if they're next.
+function sendOff(job){
+  const what = job.kind === 'labels' ? `${plural(job.n, 'label')} (${plural(job.sheets, 'sheet')})`
+    : job.kind === 'backs' ? plural(job.n, 'back flap') : job.kind === 'postcards' ? plural(job.n, 'postcard') : plural(job.n, 'envelope');
+  const markable = (job.lines || []).filter(l => !marksOf(l).s);
+  toast(`${what} off to the printer 🎉`, markable.length ? { ms:8000, action:{ label:'Mark as sent', fn:() => {
+    markable.forEach(l => setMark(l, 's', true));
+    save(); renderTracker(); updateMeta(); markStrip(true); updateStatus();
+    toast(`Marked ${plural(markable.length, 'person', 'people')} as sent in the card tracker.`);
+  } } } : {});
+  if (job.kind === 'envelopes' && backMode()) {
+    setTimeout(() => toast('Next: flip the stack over and print the back flaps.', { ms:10000, action:{ label:'Print back flaps', fn:() => doPrint('backs') } }), 600);
+  }
+  if (reduceMotion()) return;
+  const r = $('#printAll').getBoundingClientRect();
+  const x0 = r.left + r.width / 2, y0 = r.top + r.height / 2;
+  for (let i = 0; i < 12; i++) {
+    const f = document.createElement('span');
+    f.className = 'flyer';
+    f.textContent = '✉️';
+    f.style.left = x0 - 10 + 'px';
+    f.style.top = y0 - 10 + 'px';
+    document.body.append(f);
+    const dx = (Math.random() - .5) * 260, rise = 160 + Math.random() * 220, spin = (Math.random() - .5) * 90;
+    f.animate([
+      { transform:'translate(0,0) scale(.5)', opacity:0 },
+      { transform:`translate(${dx * .5}px,${-rise * .45}px) rotate(${spin * .5}deg) scale(1)`, opacity:1, offset:.3 },
+      { transform:`translate(${dx}px,${-rise}px) rotate(${spin}deg) scale(.9)`, opacity:0 },
+    ], { duration:1100 + Math.random() * 500, delay:i * 45, easing:'cubic-bezier(.2,.7,.3,1)', fill:'backwards' }).onfinish = () => f.remove();
+  }
+}
+
+// ============================================================================
+// Save as PDF
+// ============================================================================
+// Each page is drawn onto a canvas at print resolution, using the same positions, fonts, logo,
+// flourish, nudge and rotation as printing, then packed into a PDF by the small writer below.
+// Everything happens in the browser; nothing is uploaded.
 
 const loadImage = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
 
-async function drawEnvelopeCanvas(canvas, lines, dpi, assets){
+// Draws a block of lines the way CSS lays them out: each line box is size × spacing tall,
+// with the glyphs centred in it. x is the left edge, or the centre when centred.
+function drawLines(ctx, specs, x, y, dpi, center){
+  ctx.textAlign = center ? 'center' : 'left';
+  ctx.textBaseline = 'alphabetic';
+  let top = y;
+  for (const s of specs) {
+    const px = s.pt / 72 * dpi;
+    ctx.font = `${s.bold ? 700 : 400} ${px}px ${state.font}`;
+    const m = ctx.measureText('Hg');
+    const asc = m.fontBoundingBoxAscent ?? px * .8, desc = m.fontBoundingBoxDescent ?? px * .2;
+    const lh = px * spacing();
+    ctx.fillText(s.t, x, top + (lh - asc - desc) / 2 + asc);
+    top += lh;
+  }
+  return top - y;
+}
+
+function drawEnvelopeCanvas(canvas, lines, dpi, assets, side = 'front'){
   const { w, h } = dims();
-  const rot = +state.rotate || 0;
+  const rot = ((+state.rotate || 0) + (side === 'back' && state.backFlip ? 180 : 0)) % 360;
   const [pw, ph] = rot % 180 ? [h, w] : [w, h];
   canvas.width = Math.round(pw * dpi);
   canvas.height = Math.round(ph * dpi);
@@ -1400,34 +2402,65 @@ async function drawEnvelopeCanvas(canvas, lines, dpi, assets){
   const pos = getPos();
   const nx = +state.nudgeX || 0, ny = +state.nudgeY || 0;
   const X = v => (v + nx) * dpi, Y = v => (v + ny) * dpi;
+  ctx.fillStyle = inkColor();
 
+  if (side === 'back') {
+    const ret = returnLines();
+    if (ret.length) drawLines(ctx, lineSpecs(ret, +state.retPt || 10, false), X(pos.back.x), Y(pos.back.y), dpi, true);
+    return { pw, ph };
+  }
+  if (isCard() && state.divider) {
+    ctx.strokeStyle = inkColor();
+    ctx.lineWidth = Math.max(1, dpi / 150);
+    ctx.beginPath();
+    ctx.moveTo(X(w * 0.5), Y(0.35));
+    ctx.lineTo(X(w * 0.5), Y(h - 0.35));
+    ctx.stroke();
+  }
   if (assets.logo) {
     ctx.filter = state.logoGray ? 'grayscale(1)' : 'none';
     ctx.drawImage(assets.logo, X(pos.logo.x), Y(pos.logo.y), (+state.logoW || 1) * dpi, logoH() * dpi);
     ctx.filter = 'none';
   }
   if (assets.deco) ctx.drawImage(assets.deco, X(pos.deco.x), Y(pos.deco.y), (+state.decoW || 1) * dpi, decoH() * dpi);
-
-  // Text laid out the way CSS does it: line-height 1.2, glyphs centred in each line box.
-  const block = (text, p, pt) => {
-    const px = pt / 72 * dpi;
-    ctx.font = `${px}px ${state.font}`;
-    ctx.fillStyle = '#000';
-    ctx.textBaseline = 'alphabetic';
-    const m = ctx.measureText('Hg');
-    const asc = m.fontBoundingBoxAscent ?? px * .8, desc = m.fontBoundingBoxDescent ?? px * .2;
-    const lh = px * 1.2;
-    text.split('\n').forEach((line, i) => {
-      if (state.caps) line = line.toUpperCase();
-      ctx.fillText(line, X(p.x), Y(p.y) + i * lh + (lh - asc - desc) / 2 + asc);
-    });
-  };
-  if (state.printReturn) {
-    const ret = (state.returnText || '').split('\n').map(s => s.trim()).filter(Boolean).join('\n');
-    if (ret) block(ret, pos.ret, +state.retPt || 10);
+  ctx.fillStyle = inkColor();
+  if (returnOnFront()) {
+    const ret = returnLines();
+    if (ret.length) drawLines(ctx, lineSpecs(ret, +state.retPt || 10, false), X(pos.ret.x), Y(pos.ret.y), dpi, false);
   }
-  block(lines.join('\n'), pos.rcp, +state.rcpPt || 12);
+  const p = pos[rcpKey()];
+  drawLines(ctx, lineSpecs(lines, +state.rcpPt || 12, true), X(p.x), Y(p.y), dpi, centered());
   return { pw, ph };
+}
+
+function drawSheetCanvas(canvas, plan, pageIdx, dpi, assets){
+  const { S, cap, start, items, page } = plan;
+  canvas.width = Math.round(page.w * dpi);
+  canvas.height = Math.round(page.h * dpi);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const nx = +state.nudgeX || 0, ny = +state.nudgeY || 0;
+  for (let slot = 0; slot < cap; slot++) {
+    const item = items[pageIdx * cap + slot - start];
+    if (!item) continue;
+    const { x, y } = labelSlot(S, slot);
+    const L = labelLayout(S, item);
+    const specs = L.specs.map(s => ({ ...s, pt:s.pt * L.s }));
+    const textH = specs.reduce((a, s) => a + s.pt / 72 * spacing(), 0);
+    let tx = x + nx + L.padX;
+    if (L.logoW) {
+      ctx.filter = state.logoGray ? 'grayscale(1)' : 'none';
+      ctx.drawImage(assets.logo, (tx) * dpi, (y + ny + (S.h - L.logoHt) / 2) * dpi, L.logoW * dpi, L.logoHt * dpi);
+      ctx.filter = 'none';
+      tx += L.logoW + L.gap;
+    }
+    const areaW = S.w - 2 * L.padX - (L.logoW ? L.logoW + L.gap : 0);
+    ctx.fillStyle = inkColor();
+    drawLines(ctx, specs, (centered() ? tx + areaW / 2 : tx) * dpi, (y + ny + (S.h - textH) / 2) * dpi, dpi, centered());
+  }
+  return { pw:page.w, ph:page.h };
 }
 
 // Minimal PDF: one full-page JPEG per page. Offsets are byte counts, so everything is bytes.
@@ -1459,10 +2492,9 @@ function buildPDF(pages){
 }
 
 let pdfBusy = false;
-async function makePDF(dpi = 300){
-  if (!list.length) return null;
+// side: 'front' | 'back' for envelopes and postcards; labels always print their sheets.
+async function makePDF(dpi = 300, side = 'front'){
   try { await document.fonts.load(`16px ${state.font}`); await document.fonts.ready; } catch {}
-  const { w } = dims();
   const assets = {
     logo: state.logo ? await loadImage(state.logo.src) : null,
     deco: DECOS[state.deco] ? await loadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
@@ -1470,155 +2502,236 @@ async function makePDF(dpi = 300){
   };
   const canvas = document.createElement('canvas');
   const pages = [];
-  for (let i = 0; i < list.length; i++) {
-    const { pw, ph } = await drawEnvelopeCanvas(canvas, list[i], dpi, assets);
+  const label = $('#savePdf').firstElementChild;
+  const jobs = [];
+  if (isLabels()) { const plan = labelPlan(); if (!plan.items.length) return null; for (let p = 0; p < plan.pages; p++) jobs.push(() => drawSheetCanvas(canvas, plan, p, dpi, assets)); }
+  else { const items = printList(); if (!items.length) return null; items.forEach(lines => jobs.push(() => drawEnvelopeCanvas(canvas, lines, dpi, assets, side))); }
+  for (let i = 0; i < jobs.length; i++) {
+    const { pw, ph } = jobs[i]();
     const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
-    pages.push({ pw, ph, pxW: canvas.width, pxH: canvas.height, jpeg: new Uint8Array(await blob.arrayBuffer()) });
-    if (list.length > 3) $('#savePdf').firstElementChild.textContent = `Saving ${Math.round((i + 1) / list.length * 100)}%`;
+    pages.push({ pw, ph, pxW:canvas.width, pxH:canvas.height, jpeg:new Uint8Array(await blob.arrayBuffer()) });
+    if (jobs.length > 3) label.textContent = `Saving ${Math.round((i + 1) / jobs.length * 100)}%`;
   }
-  return buildPDF(pages);
+  return { pdf:buildPDF(pages), count:jobs.length };
 }
 
-async function savePDF(){
-  if (pdfBusy || !list.length) return;
+async function savePDF(side = 'front'){
+  if (pdfBusy) return;
   pdfBusy = true;
   const btn = $('#savePdf'), label = btn.firstElementChild.textContent;
   btn.disabled = true;
   try {
-    const pdf = await makePDF();
-    const url = URL.createObjectURL(pdf);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `envelopes-${state.size === 'custom' ? 'custom' : state.size}-${list.length}.pdf`;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    toast(`Saved ${plural(list.length, 'envelope')} as a PDF (${(pdf.size / 1048576).toFixed(1)} MB). Print it at 100% / Actual size.`, { ms:6000 });
+    const out = await makePDF(300, side);
+    if (!out) { toast('Nothing to save yet.', { warn:true }); return; }
+    const what = isLabels() ? 'labels' : side === 'back' ? 'back-flaps' : isCard() ? 'postcards' : 'envelopes';
+    const code = isLabels() ? state.labelSheet : isCard() ? state.cardSize : state.size;
+    download(out.pdf, `${what}-${code}-${out.count}.pdf`);
+    const noun = isLabels() ? plural(out.count, 'sheet') : side === 'back' ? plural(out.count, 'back flap') : plural(out.count, isCard() ? 'postcard' : 'envelope');
+    toast(`Saved ${noun} as a PDF (${(out.pdf.size / 1048576).toFixed(1)} MB). Print it at 100% / Actual size.`,
+      side === 'front' && backMode() ? { ms:9000, action:{ label:'Save back flaps too', fn:() => savePDF('back') } } : { ms:6000 });
   } catch (err) {
     console.error(err);
     toast('Couldn’t build the PDF. Try Print instead, and choose “Save as PDF” in the print dialog.', { warn:true, ms:7000 });
   } finally {
     btn.firstElementChild.textContent = label;
-    btn.disabled = !list.length;
     pdfBusy = false;
+    btn.disabled = !(isLabels() ? labelPlan().items.length : printList().length);
   }
 }
 
-// After the print dialog closes: a little flock of envelopes flutters up from the Print button.
-function sendOff(n){
-  toast(`${plural(n, 'envelope')} off to the printer 🎉`);
-  if (reduceMotion()) return;
-  const r = $('#printAll').getBoundingClientRect();
-  const x0 = r.left + r.width / 2, y0 = r.top + r.height / 2;
-  for (let i = 0; i < 12; i++) {
-    const f = document.createElement('span');
-    f.className = 'flyer';
-    f.textContent = '✉️';
-    f.style.left = x0 - 10 + 'px';
-    f.style.top = y0 - 10 + 'px';
-    document.body.append(f);
-    const dx = (Math.random() - .5) * 260, rise = 160 + Math.random() * 220, spin = (Math.random() - .5) * 90;
-    f.animate([
-      { transform:'translate(0,0) scale(.5)', opacity:0 },
-      { transform:`translate(${dx * .5}px,${-rise * .45}px) rotate(${spin * .5}deg) scale(1)`, opacity:1, offset:.3 },
-      { transform:`translate(${dx}px,${-rise}px) rotate(${spin}deg) scale(.9)`, opacity:0 },
-    ], { duration:1100 + Math.random() * 500, delay:i * 45, easing:'cubic-bezier(.2,.7,.3,1)', fill:'backwards' }).onfinish = () => f.remove();
-  }
+// ============================================================================
+// Backup, restore, reset
+// ============================================================================
+
+function backup(){
+  save();
+  const data = { app:'envelope-printer', version:1, saved:new Date().toISOString(), state };
+  const day = new Date().toISOString().slice(0, 10);
+  download(new Blob([JSON.stringify(data, null, 1)], { type:'application/json' }), `envelope-printer-backup-${day}.json`);
+  toast(`Backed up ${plural(state.lists.length, 'list')} and all your settings.`);
 }
 
-// Lays out the print pages. Kept separate from doPrint so the browser's own Print command
-// (menu or shortcut) gets envelopes too instead of a blank page.
-function buildPrint(mode){
-  const { w, h } = dims();
-  const test = mode === 'test';
-  const rot = test ? 0 : (+state.rotate || 0);
-  const items = mode === 'all' ? list : [list[state.idx] || EMPTY];
-  if (!items.length) return false;
-
-  let pw, ph;
-  if (test) {
-    if (w <= 10.5 && h <= 8) { pw = 11; ph = 8.5; }
-    else if (w <= 8 && h <= 10.5) { pw = 8.5; ph = 11; }
-    else { pw = Math.ceil(w + 1); ph = Math.ceil(h + 1); }
-  } else {
-    [pw, ph] = rot % 180 ? [h, w] : [w, h];
-  }
-  $('#pageStyle').textContent = `@page { size: ${pw}in ${ph}in; margin: 0; }`;
-
-  const transforms = {
-    0:   'none',
-    90:  `translateX(${h}in) rotate(90deg)`,
-    180: `translate(${w}in, ${h}in) rotate(180deg)`,
-    270: `translateY(${w}in) rotate(-90deg)`,
-  };
-
-  const root = $('#printRoot');
-  root.replaceChildren();
-  for (const lines of items) {
-    const sheet = div('sheet');
-    sheet.style.width = pw + 'in';
-    sheet.style.height = (ph - 0.02) + 'in';  // a hair short so rounding never spills a blank page
-    // Nudge applies to the test sheet too, so its effect shows against the dashed outline.
-    // Rotation doesn't: letter paper feeds differently from envelopes.
-    const env = buildEnvelope(lines, null, { print:true, nudge:true, stamp:test });
-    env.style.position = 'absolute';
-    env.style.transformOrigin = '0 0';
-    if (test) {
-      env.style.left = ((pw - w) / 2) + 'in';
-      env.style.top = ((ph - h) / 2) + 'in';
-      env.prepend(div('outline'));
-      const cap = div('caption');
-      const nx = +state.nudgeX || 0, ny = +state.nudgeY || 0;
-      const adj = [
-        nx || ny ? `printer nudge applied: ${fmt(Math.abs(nx))} in ${nx < 0 ? 'left' : 'right'}, ${fmt(Math.abs(ny))} in ${ny < 0 ? 'up' : 'down'}` : '',
-        +state.rotate ? `rotation (${+state.rotate}°) applies to envelopes only` : '',
-      ].filter(Boolean).join(' · ');
-      cap.textContent = `Test sheet · ${sizeName()} · ${fmt(w)} × ${fmt(h)} in · lay an envelope over the dashed outline` + (adj ? ` · ${adj}` : '');
-      sheet.append(cap);
-    } else {
-      env.style.left = '0';
-      env.style.top = '0';
-      env.style.transform = transforms[rot];
-    }
-    sheet.append(env);
-    root.append(sheet);
-  }
-  return true;
+async function restore(file){
+  if (!file) return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { toast('That file isn’t a backup from this page.', { warn:true }); return; }
+  const s = data && data.app === 'envelope-printer' ? data.state : null;
+  if (!s || typeof s !== 'object') { toast('That file isn’t a backup from this page.', { warn:true }); return; }
+  const lists = Array.isArray(s.lists) ? s.lists.length : 1;
+  if (!confirm(`Restore this backup from ${data.saved ? new Date(data.saved).toLocaleString() : 'an earlier date'}? It has ${plural(lists, 'list')} and replaces everything here.`)) return;
+  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { toast('Couldn’t restore: the browser wouldn’t save it.', { warn:true }); return; }
+  location.reload();
 }
-window.addEventListener('beforeprint', () => {
-  if (!$('#printRoot').children.length) buildPrint(list.length ? 'all' : 'test');
-});
-window.addEventListener('afterprint', () => {
-  $('#printRoot').replaceChildren();
-  if (pendingSendOff) { const n = pendingSendOff; pendingSendOff = 0; setTimeout(() => sendOff(n), 150); }
-});
 
-// ---- wire up ----
-$('#size').innerHTML = [...new Set(SIZES.map(s => s.group))].map(g =>
-  `<optgroup label="${g}">` + SIZES.filter(s => s.group === g).map(s =>
-    `<option value="${s.key}">${s.name}${s.w ? ` — ${fmt(s.w)} × ${fmt(s.h)} in` : ''}</option>`).join('') + '</optgroup>'
+// ============================================================================
+// Wiring
+// ============================================================================
+
+function fillSelects(){
+  const sizeSel = $('#size'), v = state.size;
+  sizeSel.innerHTML = [...new Set(SIZES.map(s => s.group))].map(g =>
+    `<optgroup label="${g}">` + SIZES.filter(s => s.group === g).map(s =>
+      `<option value="${s.key}">${s.name}${s.w ? ` — ${dimsText(s.w, s.h)}` : ''}</option>`).join('') + '</optgroup>'
+  ).join('');
+  sizeSel.value = v;
+  $('#cardSize').innerHTML = CARD_SIZES.map(s => `<option value="${s.key}">${s.name} — ${dimsText(s.w, s.h)}</option>`).join('');
+  $('#cardSize').value = state.cardSize;
+}
+fillSelects();
+$('#labelSheet').innerHTML = ['letter', 'a4'].map(pg =>
+  `<optgroup label="${PAGES[pg].name} sheets">` + LABEL_SHEETS.filter(s => s.page === pg).map(s => `<option value="${s.key}">${s.name}</option>`).join('') + '</optgroup>'
 ).join('');
 $('#font').innerHTML = [...new Set(FONTS.map(f => f[2]))].map(g =>
   `<optgroup label="${g}">` + FONTS.filter(f => f[2] === g).map(([n, css]) => `<option value='${css}' style='font-family:${css}'>${n}</option>`).join('') + '</optgroup>'
 ).join('');
+$('#ink').innerHTML = INKS.map(i => `<option value="${i.key}">${i.name}</option>`).join('');
+$('#paper').innerHTML = PAPERS.map(p => `<option value="${p.key}">${p.name}</option>`).join('');
+
+// Inputs with data-len hold lengths: shown and typed in the current unit, stored in inches.
+function applyUnits(){
+  document.querySelectorAll('.u').forEach(el => { el.textContent = isMM() ? 'mm' : 'in'; });
+  document.querySelectorAll('[data-step-in]').forEach(el => { el.step = isMM() ? el.dataset.stepMm : el.dataset.stepIn; });
+  document.querySelectorAll('[data-len]').forEach(el => { if (document.activeElement !== el) el.value = fmtU(state[el.dataset.key]); });
+  fillSelects();
+}
 
 document.querySelectorAll('[data-key]').forEach(el => {
   const k = el.dataset.key;
   if (el.type === 'checkbox') el.checked = !!state[k];
+  else if ('len' in el.dataset) el.value = fmtU(state[k]);
   else el.value = state[k];
   el.addEventListener('input', () => {
     if (el.type === 'checkbox') state[k] = el.checked;
-    else if (el.type === 'number') { if (el.value === '' || isNaN(+el.value)) return; state[k] = +el.value; }
+    else if (el.type === 'number') {
+      if (el.value === '' || isNaN(+el.value)) return;
+      state[k] = 'len' in el.dataset ? +fromU(+el.value).toFixed(4) : +el.value;
+    }
     else state[k] = el.value;
+    if (k === 'returnWhere' && state.returnWhere === 'back') { state.view = 'back'; toast('Back flap on. Place it on the Back view, and print the fronts first.', { ms:6000 }); }
+    if (['labelSheet', 'labelWhat', 'labelStart', 'returnSheets'].includes(k)) state.labelPage = 0;
     save();
     render();
-    if (k === 'font' && isScript(state.font) && (+state.rcpPt || 12) < 15) {
+    if (k === 'font' && isScript(state.font) && (+state.rcpPt || 12) < 15 && !isLabels()) {
       toast('Script fonts read best a bit bigger: 16–20pt for the address.', { ms:7000, action:{ label:'Make it 18pt', fn:() => {
         state.rcpPt = 18; $('#rcpPt').value = 18; save(); render();
       } } });
     }
   });
+});
+
+// Segmented buttons: mode, units, front/back view, tracker filter.
+document.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.set;
+  if (state[k] === b.dataset.val) return;
+  state[k] = b.dataset.val;
+  if (k === 'units') applyUnits();
+  if (k === 'mode') state.labelPage = 0;
+  save();
+  if (k === 'trackFilter') { syncSegs(); renderTracker(); return; }
+  render();
+}));
+
+$('#logoPick').onclick = $('#logoReplace').onclick = () => $('#logoFile').click();
+$('#logoFile').onchange = e => { loadLogo(e.target.files[0]); e.target.value = ''; };
+$('#logoRemove').onclick = removeLogo;
+$('#resetAll').onclick = () => {
+  if (!confirm('Reset everything?\n\nThis deletes all your saved lists and card-tracker marks, your return address and logo, and puts every setting back to its default. It can’t be undone. (Tip: “Back up everything” first.)')) return;
+  try { localStorage.removeItem(KEY); } catch {}
+  location.reload();   // a fresh load is the one path guaranteed to match a first visit
+};
+$('#backupBtn').onclick = backup;
+$('#restoreBtn').onclick = () => $('#restoreFile').click();
+$('#restoreFile').onchange = e => { restore(e.target.files[0]); e.target.value = ''; };
+$('#importBtn').onclick = () => $('#importFile').click();
+$('#templateBtn').onclick = downloadTemplate;
+$('#importFile').onchange = e => { importFile(e.target.files[0]); e.target.value = ''; };
+$('#tidyBtn').onclick = tidyUp;
+$('#householdBtn').onclick = mergeHouseholds;
+$('#clearBtn').onclick = () => {
+  if (list.length && !confirm(`Clear the addresses in “${curList().name}”?`)) return;
+  const before = state.recipients;
+  setRecipients('');
+  if (before.trim()) withUndo(before, 'List cleared.');
+};
+$('#listSel').onchange = e => switchList(e.target.value);
+$('#listNew').onclick = newList;
+$('#listDup').onclick = duplicateList;
+$('#listRename').onclick = renameList;
+$('#listDel').onclick = deleteList;
+$('#markAllSent').onclick = () => {
+  if (!list.length) return;
+  list.forEach(l => setMark(l, 's', true));
+  save(); renderTracker(); updateMeta(); markStrip(true); updateStatus();
+  toast(`Marked all ${plural(list.length, 'person', 'people')} as sent.`);
+};
+$('#clearMarks').onclick = () => {
+  if (!Object.keys(curList().marks).length) return;
+  if (!confirm(`Clear every sent / received mark in “${curList().name}”?`)) return;
+  curList().marks = {};
+  save(); renderTracker(); updateMeta(); markStrip(true); updateStatus();
+};
+$('#printBacks').onclick = () => doPrint('backs');
+
+const rcpBox = $('#recipients');
+rcpBox.addEventListener('dragover', e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); rcpBox.classList.add('dropping'); } });
+rcpBox.addEventListener('dragleave', () => rcpBox.classList.remove('dropping'));
+rcpBox.addEventListener('drop', e => {
+  if (!e.dataTransfer.files.length) return;
+  e.preventDefault();
+  rcpBox.classList.remove('dropping');
+  importFile(e.dataTransfer.files[0]);
+});
+const stageEl = $('#stage');
+stageEl.addEventListener('dragover', e => { e.preventDefault(); stageEl.classList.add('dropping'); });
+stageEl.addEventListener('dragleave', () => stageEl.classList.remove('dropping'));
+stageEl.addEventListener('drop', e => {
+  e.preventDefault();
+  stageEl.classList.remove('dropping');
+  loadLogo(e.dataTransfer.files[0]);
+});
+
+for (const [id, which, axis] of [['rcpX','rcp','x'], ['rcpY','rcp','y'], ['retX','ret','x'], ['retY','ret','y'], ['logoX','logo','x'], ['logoY','logo','y']]) {
+  document.getElementById(id).addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (isNaN(v)) return;
+    getPos()[posMap()[which]][axis] = round2(fromU(v));
+    save();
+    renderPreview();
+  });
+}
+
+$('#prev').onclick = () => go(cur() - 1);
+$('#next').onclick = () => go(cur() + 1);
+$('#reset').onclick = () => {
+  const p = state.positions[posKey()];
+  if (p) { if (state.view === 'back') delete p.back; else delete state.positions[posKey()]; }
+  save(); render(); toast('Placement reset to the standard layout.');
+};
+$('#printAll').onclick = () => doPrint('all');
+$('#printOne').onclick = () => doPrint('one');
+$('#printTest').onclick = () => doPrint('test');
+$('#savePdf').onclick = () => savePDF('front');
+$('#printAll').title = `Print everything (${MODP})`;
+document.querySelectorAll('.modp').forEach(el => { el.textContent = MODP; });
+
+syncSections();
+document.querySelectorAll('.sect').forEach(s => s.addEventListener('toggle', () => {
+  state.open[s.dataset.sect] = s.open;
+  save();
+}));
+
+// Shortcuts: ← → flip envelopes or sheets (unless you're typing or nudging a block), Ctrl/⌘+P prints.
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p') {
+    e.preventDefault();
+    if (isLabels() ? labelPlan().items.length : printList().length) doPrint('all');
+    else toast('Add at least one address first.', { warn:true });
+    return;
+  }
+  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target.closest('input, textarea, select, [contenteditable], .block, dialog')) return;
+  if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur() - 1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); go(cur() + 1); }
 });
 
 // Light / dark / follow-the-system toggle in the header.
@@ -1642,83 +2755,8 @@ $('#themeBtn').onclick = () => {
 };
 applyTheme(false);
 
-$('#tidyBtn').onclick = tidyUp;
 // A web font that finishes loading changes text widths, so redraw and re-measure.
-document.fonts?.addEventListener?.('loadingdone', () => renderPreview());
-
-$('#logoPick').onclick = $('#logoReplace').onclick = () => $('#logoFile').click();
-$('#logoFile').onchange = e => { loadLogo(e.target.files[0]); e.target.value = ''; };
-$('#logoRemove').onclick = removeLogo;
-$('#resetAll').onclick = () => {
-  if (!confirm('Reset everything?\n\nThis clears your addresses, return address and logo, and puts all settings and printer adjustments back to their defaults. It can’t be undone.')) return;
-  try { localStorage.removeItem(KEY); } catch {}
-  location.reload();   // a fresh load is the one path guaranteed to match a first visit
-};
-$('#importBtn').onclick = () => $('#importFile').click();
-$('#templateBtn').onclick = downloadTemplate;
-$('#importFile').onchange = e => { importFile(e.target.files[0]); e.target.value = ''; };
-$('#clearBtn').onclick = () => {
-  if (list.length && !confirm('Clear the address list?')) return;
-  state.recipients = ''; state.idx = 0; $('#recipients').value = '';
-  save(); render();
-};
-const rcpBox = $('#recipients');
-rcpBox.addEventListener('dragover', e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); rcpBox.classList.add('dropping'); } });
-rcpBox.addEventListener('dragleave', () => rcpBox.classList.remove('dropping'));
-rcpBox.addEventListener('drop', e => {
-  if (!e.dataTransfer.files.length) return;
-  e.preventDefault();
-  rcpBox.classList.remove('dropping');
-  importFile(e.dataTransfer.files[0]);
-});
-const stageEl = $('#stage');
-stageEl.addEventListener('dragover', e => { e.preventDefault(); stageEl.classList.add('dropping'); });
-stageEl.addEventListener('dragleave', () => stageEl.classList.remove('dropping'));
-stageEl.addEventListener('drop', e => {
-  e.preventDefault();
-  stageEl.classList.remove('dropping');
-  loadLogo(e.dataTransfer.files[0]);
-});
-
-for (const [id, which, axis] of [['rcpX','rcp','x'], ['rcpY','rcp','y'], ['retX','ret','x'], ['retY','ret','y'], ['logoX','logo','x'], ['logoY','logo','y']]) {
-  document.getElementById(id).addEventListener('input', e => {
-    const v = parseFloat(e.target.value);
-    if (isNaN(v)) return;
-    getPos()[which][axis] = round2(v);
-    save();
-    renderPreview();
-  });
-}
-
-$('#prev').onclick = () => go(state.idx - 1);
-$('#next').onclick = () => go(state.idx + 1);
-$('#reset').onclick = () => { delete state.positions[posKey()]; save(); render(); toast('Placement reset to the standard layout.'); };
-$('#printAll').onclick = () => doPrint('all');
-$('#printOne').onclick = () => doPrint('one');
-$('#printTest').onclick = () => doPrint('test');
-$('#savePdf').onclick = savePDF;
-$('#printAll').title = `Print every envelope (${MODP})`;
-document.querySelectorAll('.modp').forEach(el => { el.textContent = MODP; });
-
-syncSections();
-document.querySelectorAll('.sect').forEach(s => s.addEventListener('toggle', () => {
-  state.open[s.dataset.sect] = s.open;
-  save();
-}));
-
-// Shortcuts: ← → flip envelopes (unless you're typing or nudging a block), Ctrl/⌘+P prints the batch.
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'p') {
-    e.preventDefault();
-    if (list.length) doPrint('all');
-    else toast('Add at least one address first.', { warn:true });
-    return;
-  }
-  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
-  if (e.target.closest('input, textarea, select, [contenteditable], .block')) return;
-  if (e.key === 'ArrowLeft') { e.preventDefault(); go(state.idx - 1); }
-  if (e.key === 'ArrowRight') { e.preventDefault(); go(state.idx + 1); }
-});
+document.fonts?.addEventListener?.('loadingdone', () => { layoutCache.clear(); renderPreview(); });
 
 // Overlay scrollbar for each desktop pane: shows while scrolling (or when the pointer nears the
 // right edge), fades after a moment, and can be dragged. Also sets the edge fades on the pane.
@@ -1769,7 +2807,7 @@ function overlayScrollbar(sc){
     thumb.addEventListener('pointerup', up);
     thumb.addEventListener('pointercancel', up);
   });
-  // Content grows and shrinks (addresses, logo, open FAQs), so keep the fades and thumb in step.
+  // Content grows and shrinks (addresses, logo, open sections), so keep the fades and thumb in step.
   const ro = new ResizeObserver(place);
   ro.observe(sc);
   [...sc.children].forEach(c => ro.observe(c));
@@ -1777,8 +2815,29 @@ function overlayScrollbar(sc){
 }
 document.querySelectorAll('.sidebar, .content').forEach(overlayScrollbar);
 
+// ---- Installable app: offline copy via a service worker, and an Install button when offered ----
+let installPrompt = null;
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(() => {
+    // Fetch the web fonts once while online, so the offline copy has them too.
+    if (navigator.onLine) FONTS.filter(f => f[2] !== 'Everyday').forEach(f => document.fonts.load(`16px ${f[1]}`).catch(() => {}));
+  }).catch(() => {});
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; $('#installBtn').hidden = false; });
+$('#installBtn').onclick = async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  const { outcome } = await installPrompt.userChoice.catch(() => ({}));
+  installPrompt = null;
+  $('#installBtn').hidden = true;
+  if (outcome === 'accepted') toast('Installed. It now opens in its own window and works offline.');
+};
+window.addEventListener('appinstalled', () => { $('#installBtn').hidden = true; });
+
 let rt;
 window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderPreview, 100); });
+populateLists();
+applyUnits();
 render();
 </script>
 </body>
