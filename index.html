@@ -2195,8 +2195,22 @@ function scheduleMeasure(){
   }, 120);
 }
 
+// What the squirrel says when everything fits. Never the same line twice in a row.
+const SQUIRREL_SAYS = [
+  'All fit!', 'Good to go!', 'All good!', 'Looking great!', 'Nailed it!', 'Ready to print!',
+  'Perfect fit!', 'Lookin’ sharp!', 'Nuts about it!', 'Squirrelly good!', 'Tail-wagging good!',
+  'Stamp of approval!', 'Signed, sealed…', 'Ship it!', 'Chef’s kiss!', 'Acorn-approved!',
+  'Tree-mendous!', 'Nutty-perfect!', 'Top of the tree!', 'Hazelnailed it!',
+];
+let lastSaying = '';
+function squirrelSays(){
+  const options = SQUIRREL_SAYS.filter(s => s !== lastSaying);
+  lastSaying = options[Math.floor(Math.random() * options.length)];
+  return lastSaying;
+}
+
 function peekSquirrel(){
-  if (reduceMotion()) { toast('🐿️ Everything fits.'); return; }
+  if (reduceMotion()) { toast(`🐿️ ${squirrelSays()} Everything fits.`); return; }
   $('#stage .squirrel')?.remove();
   const sq = document.createElement('span');
   sq.className = 'squirrel';
@@ -2204,7 +2218,7 @@ function peekSquirrel(){
   sq.textContent = '🐿️';
   const bubble = document.createElement('span');
   bubble.className = 'bubble';
-  bubble.textContent = 'All fit!';
+  bubble.textContent = squirrelSays();
   sq.append(bubble);
   $('#stage').append(sq);
   sq.animate([
